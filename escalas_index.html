@@ -1,0 +1,2193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Escalas de Produção — GAROL</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e2229; --text:#e8e8ea; --muted:#9aa0aa;
+    --F:#5b8bd0; --H:#c96b6b; --B:#7fa650; --D:#d98a3d; --special:#c9b458;
+    --border:#2a2f38;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;-webkit-text-size-adjust:100%;}
+  header{padding:8px 8px 5px;border-bottom:1px solid var(--border);}
+  header h1{margin:0 0 2px;font-size:.95rem;line-height:1.25;}
+  header p{margin:0;color:var(--muted);font-size:.68rem;}
+  nav{display:flex;gap:4px;padding:6px 8px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:thin;}
+  nav button{background:var(--panel2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:5px;cursor:pointer;font-size:.7rem;flex:0 0 auto;white-space:nowrap;}
+  nav button.active{background:#3a4150;border-color:#5a6474;font-weight:600;}
+  main{padding:4px 4px 6px;max-width:1000px;margin:0 auto;}
+  section{display:none;}
+  section.active{display:block;}
+  h2{font-size:.9rem;margin:0 0 8px;border-bottom:2px solid var(--border);padding-bottom:5px;}
+  .tag{display:inline-block;padding:1px 7px;border-radius:10px;font-weight:700;font-size:.62rem;color:#111;}
+  .tag-F{background:var(--F);color:#fff;} .tag-H{background:var(--H);color:#fff;}
+  .tag-B{background:var(--B);color:#fff;} .tag-D{background:var(--D);color:#fff;}
+  .tag-Especial{background:var(--special);}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px 0 16px;border-radius:5px;}
+  table{width:100%;min-width:320px;border-collapse:collapse;font-size:.64rem;}
+  th,td{padding:4px 5px;border:1px solid var(--border);text-align:left;white-space:nowrap;}
+  td:nth-child(3){white-space:normal;}
+  th{background:var(--panel2);position:sticky;top:0;}
+  .kpis{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0 10px;}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:5px 8px;flex:1 1 62px;min-width:62px;}
+  .kpi .n{font-size:.9rem;font-weight:700;}
+  .kpi .l{color:var(--muted);font-size:.55rem;line-height:1.2;}
+  .cols{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .col{flex:1 1 100%;min-width:0;border-radius:6px;padding:8px 10px;}
+  .col.folga{background:#2a1616;border:1px solid #4a2323;}
+  .col.trab{background:#131f2c;border:1px solid #234058;}
+  .col h3{margin:0 0 5px;font-size:.72rem;}
+  .col ul{margin:0;padding-left:14px;font-size:.68rem;line-height:1.5;}
+  .row-Fixo{background:rgba(91,139,208,.10);}
+  .row-Folguista{background:rgba(255,200,80,.10);}
+  .row-Parada{background:rgba(255,255,255,.04);color:var(--muted);}
+  .row-Semfolguista{background:rgba(217,86,86,.20);font-weight:600;}
+  .ajrow-F{background:rgba(91,139,208,.18);}
+  .ajrow-H{background:rgba(201,107,107,.18);}
+  .ajrow-B{background:rgba(127,166,80,.18);}
+  .ajrow-D{background:rgba(217,138,61,.18);}
+
+  .filtro-letras{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;}
+  .filtro-btn{background:var(--panel2);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:5px;cursor:pointer;font-size:.72rem;font-weight:600;}
+  .filtro-btn.active{color:#fff;border-color:transparent;}
+  .filtro-btn.filtro-F.active{background:var(--F);}
+  .filtro-btn.filtro-H.active{background:var(--H);}
+  .filtro-btn.filtro-B.active{background:var(--B);}
+  .filtro-btn.filtro-D.active{background:var(--D);}
+  .filtro-btn.filtro-Todos.active{background:#4a5160;}
+
+  .add-ajudante{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;}
+  .add-ajudante input{flex:1;min-width:120px;background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:6px 8px;font-size:.72rem;}
+  .add-ajudante select{background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:6px 6px;font-size:.72rem;}
+  .add-btn{background:#1f2f45;color:#8fb4dc;border:1px solid #2f4e6b;padding:6px 10px;border-radius:5px;cursor:pointer;font-size:.72rem;white-space:nowrap;}
+  .tag-extra{display:inline-block;background:#3a3320;color:#d9b968;font-size:.58rem;padding:1px 5px;border-radius:7px;margin-left:4px;}
+  .del-btn{color:#e88;cursor:pointer;margin-left:6px;font-weight:700;display:inline-block;padding:6px 10px;min-width:20px;text-align:center;}
+  .warn{color:#e88;font-weight:600;}
+  .chapa-cell{border-bottom:1px dashed #6a7484;cursor:text;padding:2px 4px;border-radius:3px;display:inline-block;min-width:22px;min-height:16px;font-size:1.05rem;font-weight:700;}
+  .chapa-cell:focus{outline:2px solid #5b8bd0;background:#22293a;}
+  .chapa-highlight{background:#ffe066 !important;color:#111 !important;outline:2px solid #d9b968;font-weight:900;}
+  .chapa-hint{color:var(--muted);font-size:.62rem;margin:8px 0 10px;line-height:1.3;}
+  .reset-btn{background:#3a2323;color:#e88;border:1px solid #5a3333;padding:10px 12px;border-radius:6px;cursor:pointer;font-size:.75rem;margin-bottom:10px;flex:1;}
+  .undo-btn{background:#1f2f45;color:#8fb4dc;border:1px solid #2f4e6b;padding:10px 12px;border-radius:6px;cursor:pointer;font-size:.75rem;margin-bottom:10px;flex:1;}
+  .reset-btn.confirm-pending{background:#e88;color:#3a2323;font-weight:700;}
+  .whatsapp-btn{background:#1f3d2b;color:#6fdc8c;border:1px solid #2f6b45;padding:7px 12px;border-radius:5px;cursor:pointer;font-size:.7rem;width:100%;margin-bottom:5px;}
+  .print-btn{background:#2a2a3d;color:#a9a9f0;border:1px solid #45456b;padding:7px 12px;border-radius:5px;cursor:pointer;font-size:.7rem;width:100%;margin-bottom:5px;}
+  .copy-feedback{display:block;color:#6fdc8c;font-size:.68rem;min-height:1.1em;margin-bottom:8px;}
+  .aj-F{background:var(--F);color:#fff;} .aj-H{background:var(--H);color:#fff;}
+  .aj-B{background:var(--B);color:#fff;} .aj-D{background:var(--D);color:#fff;}
+  footer{padding:10px;color:var(--muted);font-size:.62rem;text-align:center;}
+
+  @media (min-width:640px){
+    header{padding:20px 24px 8px;}
+    header h1{font-size:1.4rem;}
+    header p{font-size:.85rem;}
+    nav{padding:12px 24px;flex-wrap:wrap;overflow-x:visible;}
+    main{padding:20px 24px 60px;}
+    h2{font-size:1.2rem;}
+    table{font-size:.88rem;}
+    .col{flex:1;min-width:260px;}
+    .whatsapp-btn{width:auto;}
+    .print-btn{width:auto;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Escalas de Produção — Fundição GAROL</h1>
+  <p>Fundidores, folguistas e ajudantes por escala (F / H / B / D) — capacidade 68 un/dia por banca (G25 = 70)</p>
+</header>
+
+<nav id="tabs"></nav>
+<main id="main"></main>
+<input type="file" id="input-importar-backup" accept=".html,.json" style="display:none;" onchange="importarBackup(event)">
+<div style="padding:0 24px;display:flex;gap:6px;">
+  <button id="btn-undo" class="undo-btn" onclick="desfazerUltimaEdicao()">↩️ Desfazer</button>
+  <button id="btn-reset" class="reset-btn" onclick="resetChapas()">Restaurar tudo</button>
+</div>
+<p class="chapa-hint" style="padding:0 24px;">✏️ Toque na chapa de qualquer banca (mesmo parada) para editar — o nome do fundidor responsável é ajustado automaticamente pela chapa digitada. Salvo neste dispositivo.</p>
+<footer>Gerado automaticamente a partir da planilha escalas_producao.xlsx</footer>
+
+<script>
+const AJ = {
+  F: ["Leandro de Freitas Simoes","Rodrigo Carmo Barros","Carlos Henrique de Souza Sobrinho"],
+  H: ["Renato Santos Ferreira","Nalberth Junior Raulino Santana","Carlos Eduardo Sampaio"],
+  B: ["Uellison Costa de Jesus","Lucas Costa Santos","Luiz Ricardo Pereira de Jesus","Alexsandro Pereira Cerqueira"],
+  D: ["Emawxuell da Silva Chaves","Erick Augusto Borel do Amaral"]
+};
+
+const FOLGA_NOMES = {
+  F: ["Alexandre Brito","Ricardo de Jesus Amorim","Gilsimar Pereira Duarte"],
+  H: ["Marcos Aurelio de Sousa Paes","Adailson Coutinho Rodrigues","Tiago dos Santos","Marcos Vinicius de Souza Archanjo","Diego dos Santos Guimaraes","Ryalisson Rodrigues Simoes"],
+  B: ["Felipe Santos Moreira","Jose Matim Aliprandi Santos","Eduardo dos Santos Martins","Gustavo Barreto de Carvalho","Jean Guilherme Mendes Batista"],
+  D: ["Ismael Miranda dos Santos","Matheus de Souza Almeida","Antonio Marcos Cantao Ferreira","Gustavo Tonni Armondes Amorin","Lucas Ferreira Santos","Edson Francisco da Silva","Jose Carvalho dos Santos"]
+};
+const SEM_BANCA_FOLGA = {
+  F: ["Ronilson de Jesus da Silva","Robson de Jesus Nascimento","Carlos Andre Santana","Diego Souza Nogueira"],
+  H: [],
+  B: ["Leones de Freitas Simoes","Carlos Rodrigo Alves Guimaraes"],
+  D: ["Jose Carlos Santana"]
+};
+const FOLGUISTA_NOMES = {
+  F: ["Leones de Freitas Simoes","Phablo Eduardo Abreu de Souza","Carlos Rodrigo Alves Guimaraes"],
+  H: ["Carlos Andre Santana","Leones de Freitas Simoes","Robson de Jesus Nascimento","Ronilson de Jesus da Silva","Carlos Rodrigo Alves Guimaraes","Jose Carlos Santana"],
+  B: ["Ronilson de Jesus da Silva","Robson de Jesus Nascimento","Carlos Andre Santana","Diego Souza Nogueira","Jose Carlos Santana"],
+  D: ["Leones de Freitas Simoes","Robson de Jesus Nascimento","Ronilson de Jesus da Silva","Carlos Andre Santana","Diego Souza Nogueira","Carlos Rodrigo Alves Guimaraes"]
+};
+
+let SEM_BANCA_TRABALHANDO = {F:[],H:[],B:[],D:[]};
+
+// Banca -> [chapa, nome, situacao, grupoFixo(ou null), capacidade]
+const ESCALAS_BASELINE = {
+F: [
+["G01","583","FELIPE SANTOS MOREIRA","Fixo",68],
+["G02","582","MARCOS AURELIO DE SOUSA PAES","Fixo",68],
+["G03","562","LEONES DE FREITAS SIMOES","Folguista",68],
+["G04","575","ADAILSON COUTINHO RODRIGUES","Fixo",68],
+["G05","599","TIAGO DOS SANTOS","Fixo",68],
+["G06","578","ISMAEL MIRANDA DOS SANTOS","Fixo",68],
+["G07","572","MATHEUS DE SOUZA ALMEIDA","Fixo",68],
+["G08","588","JOSE MATIM ALIPRANDI SANTOS","Fixo",68],
+["G09","597","ANTONIO MARCOS CANTAO FERREIRA","Fixo",68],
+["G10","570","MARCOS VINICIUS DE SOUZA ARCHANJO","Fixo",68],
+["G11","587","GUSTAVO TONNI ARMONDES AMORIN","Fixo",68],
+["G12","591","EDUARDO DOS SANTOS MARTINS","Fixo",68],
+["G13","553","PHABLO EDUARDO ABREU DE SOUZA","Folguista",68],
+["G14","574","DIEGO DOS SANTOS GUIMARAES","Fixo",68],
+["G15","596","GUSTAVO BARRETO DE CARVALHO","Fixo",68],
+["G16","584","LUCAS FERREIRA SANTOS","Fixo",68],
+["G17","567","JEAN GUILHERME MENDES BATISTA","Fixo",68],
+["G18","594","RYALISSON RODRIGUES SIMOES","Fixo",68],
+["G19","","BANCA PARADA","Parada",0],
+["G20","","BANCA PARADA","Parada",0],
+["G21","563","CARLOS RODRIGO ALVES GUIMARAES","Folguista",68],
+["G22","577","EDSON FRANCISCO DA SILVA","Fixo",68],
+["G23","","BANCA PARADA","Parada",0],
+["G24","","BANCA PARADA","Parada",0],
+["G25","564","JOSE CARVALHO DOS SANTOS","Fixo",70]
+],
+H: [
+["G01","583","FELIPE SANTOS MOREIRA","Fixo",68],
+["G02","565","CARLOS ANDRE SANTANA","Folguista",68],
+["G03","576","ALEXANDRE BRITO","Fixo",68],
+["G04","562","LEONES DE FREITAS SIMOES","Folguista",68],
+["G05","556","ROBSON DE JESUS NASCIMENTO","Folguista",68],
+["G06","578","ISMAEL MIRANDA DOS SANTOS","Fixo",68],
+["G07","572","MATHEUS DE SOUZA ALMEIDA","Fixo",68],
+["G08","588","JOSE MATIM ALIPRANDI SANTOS","Fixo",68],
+["G09","597","ANTONIO MARCOS CANTAO FERREIRA","Fixo",68],
+["G10","552","RONILSON DE JESUS DA SILVA","Folguista",68],
+["G11","587","GUSTAVO TONNI ARMONDES AMORIN","Fixo",68],
+["G12","591","EDUARDO DOS SANTOS MARTINS","Fixo",68],
+["G13","595","RICARDO DE JESUS AMORIM","Fixo",68],
+["G14","563","CARLOS RODRIGO ALVES GUIMARAES","Folguista",68],
+["G15","596","GUSTAVO BARRETO DE CARVALHO","Fixo",68],
+["G16","584","LUCAS FERREIRA SANTOS","Fixo",68],
+["G17","567","JEAN GUILHERME MENDES BATISTA","Fixo",68],
+["G18","593","JOSE CARLOS SANTANA","Folguista",68],
+["G19","","BANCA PARADA","Parada",0],
+["G20","","BANCA PARADA","Parada",0],
+["G21","554","GILSIMAR PEREIRA DUARTE","Fixo",68],
+["G22","577","EDSON FRANCISCO DA SILVA","Fixo",68],
+["G23","","BANCA PARADA","Parada",0],
+["G24","","BANCA PARADA","Parada",0],
+["G25","564","JOSE CARVALHO DOS SANTOS","Fixo",70]
+],
+B: [
+["G01","552","RONILSON DE JESUS DA SILVA","Folguista",68],
+["G02","582","MARCOS AURELIO DE SOUSA PAES","Fixo",68],
+["G03","576","ALEXANDRE BRITO","Fixo",68],
+["G04","575","ADAILSON COUTINHO RODRIGUES","Fixo",68],
+["G05","599","TIAGO DOS SANTOS","Fixo",68],
+["G06","578","ISMAEL MIRANDA DOS SANTOS","Fixo",68],
+["G07","572","MATHEUS DE SOUZA ALMEIDA","Fixo",68],
+["G08","556","ROBSON DE JESUS NASCIMENTO","Folguista",68],
+["G09","597","ANTONIO MARCOS CANTAO FERREIRA","Fixo",68],
+["G10","570","MARCOS VINICIUS DE SOUZA ARCHANJO","Fixo",68],
+["G11","587","GUSTAVO TONNI ARMONDES AMORIN","Fixo",68],
+["G12","565","CARLOS ANDRE SANTANA","Folguista",68],
+["G13","595","RICARDO DE JESUS AMORIM","Fixo",68],
+["G14","574","DIEGO DOS SANTOS GUIMARAES","Fixo",68],
+["G15","590","DIEGO SOUZA NOGUEIRA","Folguista",68],
+["G16","584","LUCAS FERREIRA SANTOS","Fixo",68],
+["G17","593","JOSE CARLOS SANTANA","Folguista",68],
+["G18","594","RYALISSON RODRIGUES SIMOES","Fixo",68],
+["G19","","BANCA PARADA","Parada",0],
+["G20","","BANCA PARADA","Parada",0],
+["G21","554","GILSIMAR PEREIRA DUARTE","Fixo",68],
+["G22","577","EDSON FRANCISCO DA SILVA","Fixo",68],
+["G23","","BANCA PARADA","Parada",0],
+["G24","","BANCA PARADA","Parada",0],
+["G25","564","JOSE CARVALHO DOS SANTOS","Fixo",70]
+],
+D: [
+["G01","583","FELIPE SANTOS MOREIRA","Fixo",68],
+["G02","582","MARCOS AURELIO DE SOUSA PAES","Fixo",68],
+["G03","576","ALEXANDRE BRITO","Fixo",68],
+["G04","575","ADAILSON COUTINHO RODRIGUES","Fixo",68],
+["G05","599","TIAGO DOS SANTOS","Fixo",68],
+["G06","562","LEONES DE FREITAS SIMOES","Folguista",68],
+["G07","556","ROBSON DE JESUS NASCIMENTO","Folguista",68],
+["G08","588","JOSE MATIM ALIPRANDI SANTOS","Fixo",68],
+["G09","552","RONILSON DE JESUS DA SILVA","Folguista",68],
+["G10","570","MARCOS VINICIUS DE SOUZA ARCHANJO","Fixo",68],
+["G11","565","CARLOS ANDRE SANTANA","Folguista",68],
+["G12","591","EDUARDO DOS SANTOS MARTINS","Fixo",68],
+["G13","595","RICARDO DE JESUS AMORIM","Fixo",68],
+["G14","574","DIEGO DOS SANTOS GUIMARAES","Fixo",68],
+["G15","596","GUSTAVO BARRETO DE CARVALHO","Fixo",68],
+["G16","","SEM FOLGUISTA","Sem folguista",0],
+["G17","567","JEAN GUILHERME MENDES BATISTA","Fixo",68],
+["G18","594","RYALISSON RODRIGUES SIMOES","Fixo",68],
+["G19","","BANCA PARADA","Parada",0],
+["G20","","BANCA PARADA","Parada",0],
+["G21","554","GILSIMAR PEREIRA DUARTE","Fixo",68],
+["G22","590","DIEGO SOUZA NOGUEIRA","Folguista",68],
+["G23","","BANCA PARADA","Parada",0],
+["G24","","BANCA PARADA","Parada",0],
+["G25","563","CARLOS RODRIGO ALVES GUIMARAES","Folguista",70]
+]
+};
+
+const FIXOS_GRUPO = {
+  G01:"B",G02:"H",G03:"F",G04:"H",G05:"H",G06:"D",G07:"D",G08:"B",G09:"D",G10:"H",
+  G11:"D",G12:"B",G13:"F",G14:"H",G15:"B",G16:"D",G17:"B",G18:"H",G21:"F",G22:"D",G25:"D"
+};
+
+const BANCAS_ALL = [];
+for(let n=1;n<=25;n++){ BANCAS_ALL.push("G"+String(n).padStart(2,"0")); }
+
+// ---- Deriva FIXO_DATA e FOLGUISTA_DATA a partir dos dados originais (ESCALAS_BASELINE) ----
+function derivarDadosOriginais(){
+  const fixo = {};
+  const folguista = {};
+  BANCAS_ALL.forEach(banca=>{
+    let grupo = null, fixoInfo = null;
+    ["F","H","B","D"].forEach(g=>{
+      const row = ESCALAS_BASELINE[g].find(r=>r[0]===banca);
+      if(!row) return;
+      if(row[3] === "Fixo"){
+        fixoInfo = {chapa: row[1], nome: row[2]};
+      } else if(row[3] === "Folguista" || row[3] === "Sem folguista"){
+        grupo = g;
+        if(row[3] === "Folguista"){
+          folguista[banca] = {chapa: row[1], nome: row[2]};
+        }
+      }
+    });
+    if(grupo === null){
+      fixo[banca] = {chapa:"", nome:"BANCA PARADA", grupo:null};
+    } else {
+      fixo[banca] = {chapa: fixoInfo.chapa, nome: fixoInfo.nome, grupo: grupo};
+    }
+  });
+  return {fixo, folguista};
+}
+
+const DERIVADO = derivarDadosOriginais();
+
+// Mapa permanente nome -> grupo original (nunca muda, mesmo se a banca fixa da pessoa for editada depois)
+let GRUPO_ORIGINAL_POR_NOME = {};
+Object.values(DERIVADO.fixo).forEach(f=>{
+  if(f.nome && f.grupo) GRUPO_ORIGINAL_POR_NOME[f.nome.toUpperCase()] = f.grupo;
+});
+try{
+  const savedGrupoOriginal = JSON.parse(localStorage.getItem("grupoOriginalPorNome") || "{}");
+  Object.assign(GRUPO_ORIGINAL_POR_NOME, savedGrupoOriginal);
+}catch(e){}
+
+// Mapa permanente chapa -> nome, baseado nos dados originais da planilha (nunca muda)
+const NOME_POR_CHAPA_ORIGINAL = {};
+Object.values(DERIVADO.fixo).forEach(f=>{ if(f.chapa) NOME_POR_CHAPA_ORIGINAL[f.chapa] = f.nome; });
+Object.values(DERIVADO.folguista).forEach(f=>{ if(f.chapa) NOME_POR_CHAPA_ORIGINAL[f.chapa] = f.nome; });
+
+let FIXO_DATA = DERIVADO.fixo;
+let FOLGUISTA_DATA = DERIVADO.folguista;
+
+try{
+  const baseFixo = JSON.parse(localStorage.getItem("fixoDataBaseline"));
+  const baseFolg = JSON.parse(localStorage.getItem("folguistaDataBaseline"));
+  if(baseFixo) FIXO_DATA = baseFixo;
+  if(baseFolg) FOLGUISTA_DATA = baseFolg;
+}catch(e){}
+
+try{
+  const savedFixo = JSON.parse(localStorage.getItem("fixoData"));
+  if(savedFixo) FIXO_DATA = savedFixo;
+}catch(e){}
+try{
+  const savedFolg = JSON.parse(localStorage.getItem("folguistaData"));
+  if(savedFolg) FOLGUISTA_DATA = savedFolg;
+}catch(e){}
+
+function gerarListaFundidores(){
+  const lista = [];
+
+  BANCAS_ALL.forEach(banca=>{
+    const f = FIXO_DATA[banca];
+    if(f && f.grupo && f.chapa && f.nome){
+      lista.push([banca, f.chapa, f.nome, "Fixo", f.grupo]);
+    }
+  });
+
+  // agrupa folguistas por chapa+nome, juntando as bancas que cada um cobre
+  const folguistasPorChapa = {};
+  BANCAS_ALL.forEach(banca=>{
+    const folg = FOLGUISTA_DATA[banca];
+    if(folg && folg.chapa && folg.nome){
+      const key = folg.chapa + "|" + folg.nome;
+      if(!folguistasPorChapa[key]) folguistasPorChapa[key] = {chapa:folg.chapa, nome:folg.nome, bancas:[]};
+      folguistasPorChapa[key].bancas.push(banca);
+    }
+  });
+  Object.values(folguistasPorChapa).forEach(f=>{
+    const grupo = grupoPessoalPorNome(f.nome) || "Especial";
+    lista.push([f.bancas.join(", "), f.chapa, f.nome, "Folguista", grupo]);
+  });
+
+  return lista;
+}
+
+function gerarEscalas(){
+  const out = {F:[],H:[],B:[],D:[]};
+  ["F","H","B","D"].forEach(g=>{
+    BANCAS_ALL.forEach(banca=>{
+      const f = FIXO_DATA[banca];
+      const cap = banca === "G25" ? 70 : 68;
+      if(!f || f.grupo === null){
+        out[g].push([banca, "", "BANCA PARADA", "Parada", 0]);
+      } else if(f.grupo === g){
+        const folg = FOLGUISTA_DATA[banca];
+        if(folg && folg.chapa){
+          out[g].push([banca, folg.chapa, folg.nome, "Folguista", cap]);
+        } else {
+          out[g].push([banca, "", "SEM FOLGUISTA", "Sem folguista", 0]);
+        }
+      } else {
+        out[g].push([banca, f.chapa, f.nome, "Fixo", cap]);
+      }
+    });
+  });
+  return out;
+}
+
+let ESCALAS = gerarEscalas();
+
+const FUNDIDORES_POR_GRUPO = {F:7,H:6,B:7,D:8};
+const FUNDIDORES_FIXOS = {F:3,H:6,B:5,D:7};
+const FUNDIDORES_FOLG = {F:4,H:0,B:2,D:1};
+
+let LISTA_FUNDIDORES = [
+["G01","583","FELIPE SANTOS MOREIRA","Fixo","B"],
+["G02","582","MARCOS AURELIO DE SOUSA PAES","Fixo","H"],
+["G03","576","ALEXANDRE BRITO","Fixo","F"],
+["G04","575","ADAILSON COUTINHO RODRIGUES","Fixo","H"],
+["G05","599","TIAGO DOS SANTOS","Fixo","H"],
+["G06","578","ISMAEL MIRANDA DOS SANTOS","Fixo","D"],
+["G07","572","MATHEUS DE SOUZA ALMEIDA","Fixo","D"],
+["G08","588","JOSE MATIM ALIPRANDI SANTOS","Fixo","B"],
+["G09","597","ANTONIO MARCOS CANTAO FERREIRA","Fixo","D"],
+["G10","570","MARCOS VINICIUS DE SOUZA ARCHANJO","Fixo","H"],
+["G11","587","GUSTAVO TONNI ARMONDES AMORIN","Fixo","D"],
+["G12","591","EDUARDO DOS SANTOS MARTINS","Fixo","B"],
+["G13","595","RICARDO DE JESUS AMORIM","Fixo","F"],
+["G14","574","DIEGO DOS SANTOS GUIMARAES","Fixo","H"],
+["G15","596","GUSTAVO BARRETO DE CARVALHO","Fixo","B"],
+["G16","584","LUCAS FERREIRA SANTOS","Fixo","D"],
+["G17","567","JEAN GUILHERME MENDES BATISTA","Fixo","B"],
+["G18","594","RYALISSON RODRIGUES SIMOES","Fixo","H"],
+["G21","554","GILSIMAR PEREIRA DUARTE","Fixo","F"],
+["G22","577","EDSON FRANCISCO DA SILVA","Fixo","D"],
+["G25","564","JOSE CARVALHO DOS SANTOS","Fixo","D"],
+["G01, G09, G10","552","RONILSON DE JESUS DA SILVA","Folguista","F"],
+["G05, G07, G08","556","ROBSON DE JESUS NASCIMENTO","Folguista","F"],
+["G02, G11, G12","565","CARLOS ANDRE SANTANA","Folguista","F"],
+["G15, G22","590","DIEGO SOUZA NOGUEIRA","Folguista","F"],
+["G03, G04, G06","562","LEONES DE FREITAS SIMOES","Folguista","B"],
+["G14, G21, G25","563","CARLOS RODRIGO ALVES GUIMARAES","Folguista","B"],
+["G17, G18","593","JOSE CARLOS SANTANA","Folguista","D"],
+["G13","553","PHABLO EDUARDO ABREU DE SOUZA","Folguista","Especial"]
+];
+
+let CHAPA_OVERRIDES = {};
+try {
+  CHAPA_OVERRIDES = JSON.parse(localStorage.getItem("chapaOverrides") || "{}");
+} catch(e){ CHAPA_OVERRIDES = {}; }
+
+function chapaFor(nome, original){
+  return (CHAPA_OVERRIDES[nome] !== undefined && CHAPA_OVERRIDES[nome] !== "")
+    ? CHAPA_OVERRIDES[nome] : original;
+}
+
+let HISTORICO = [];
+try{
+  HISTORICO = JSON.parse(localStorage.getItem("historicoChapas") || "[]");
+}catch(e){ HISTORICO = []; }
+
+function salvarHistorico(){
+  try{ localStorage.setItem("historicoChapas", JSON.stringify(HISTORICO)); }catch(e){}
+}
+
+function saveChapa(nome, valor){
+  HISTORICO.push({tipo:"pessoa", chave:nome, anterior: CHAPA_OVERRIDES[nome], label: nome});
+  salvarHistorico();
+  CHAPA_OVERRIDES[nome] = valor;
+  try{ localStorage.setItem("chapaOverrides", JSON.stringify(CHAPA_OVERRIDES)); }catch(e){}
+}
+
+// ---- Registro chapa -> nome, usado para "nome segue a chapa" nas tabelas de banca ----
+let LISTA_FUNDIDORES_EXTRAS = [];
+try{
+  LISTA_FUNDIDORES_EXTRAS = JSON.parse(localStorage.getItem("listaFundidoresExtras") || "[]");
+}catch(e){ LISTA_FUNDIDORES_EXTRAS = []; }
+LISTA_FUNDIDORES_EXTRAS.forEach(f=>{
+  if(f.nome && f.grupo) GRUPO_ORIGINAL_POR_NOME[f.nome.toUpperCase()] = f.grupo;
+});
+
+function construirNomePorChapa(){
+  const map = {};
+  LISTA_FUNDIDORES.forEach(r=>{
+    const [,chapa,nome] = r;
+    if(chapa) map[chapa] = nome;
+  });
+  Object.values(FIXO_DATA).forEach(f=>{ if(f.chapa) map[f.chapa] = f.nome; });
+  Object.values(FOLGUISTA_DATA).forEach(f=>{ if(f.chapa) map[f.chapa] = f.nome; });
+  LISTA_FUNDIDORES_EXTRAS.forEach(f=>{ if(f.chapa) map[f.chapa] = f.nome; });
+  return map;
+}
+let NOME_POR_CHAPA = construirNomePorChapa();
+
+let BANCA_OVERRIDES = {};
+try {
+  BANCA_OVERRIDES = JSON.parse(localStorage.getItem("bancaOverrides") || "{}");
+} catch(e){ BANCA_OVERRIDES = {}; }
+
+function bancaKey(escala, banca){ return escala + "|" + banca; }
+
+function saveBancaChapa(escala, banca, novaChapa){
+  const key = bancaKey(escala, banca);
+  HISTORICO.push({tipo:"banca", chave:key, anterior: BANCA_OVERRIDES[key], label: `${escala} - ${banca}`});
+  salvarHistorico();
+  BANCA_OVERRIDES[key] = novaChapa;
+  try{ localStorage.setItem("bancaOverrides", JSON.stringify(BANCA_OVERRIDES)); }catch(e){}
+}
+
+// Capacidade padrao por banca (independente de quem esta trabalhando)
+let CAPACIDADE_BANCA = {};
+["F","H","B","D"].forEach(g=>{
+  ESCALAS[g].forEach(r=>{ CAPACIDADE_BANCA[r[0]] = (r[0]==="G25") ? 70 : 68; });
+});
+
+const padRight = (s,n) => s.toString().slice(0,n).padEnd(n," ");
+
+function textoWhatsApp(g){
+  const eff = effectiveRows(g);
+  const produzindo = eff.filter(r=>r.cap>0).length;
+  const producao = eff.reduce((a,r)=>a+r.cap,0);
+
+  let texto = `*ESCALA ${g}*\n`;
+  texto += "```\n";
+  eff.forEach(r=>{
+    const chapaTxt = r.chapa || "-";
+    texto += `${r.banca} [${chapaTxt}] ${r.nome}\n`;
+  });
+  texto += "```\n";
+  texto += `${produzindo}/21 | ${producao}un`;
+  return texto;
+}
+
+function textoWhatsAppAjudantes(){
+  const grupos = ["F","H","B","D"].filter(g=>ajudanteFiltro.includes(g));
+  let texto = `*AJUDANTES*\n`;
+  texto += "```\n";
+  grupos.forEach(g=>{
+    ajudantesDoGrupo(g).forEach(nome=>{
+      texto += `${g} ${nome}\n`;
+    });
+  });
+  texto += "```\n";
+  const total = grupos.reduce((a,g)=>a+ajudantesDoGrupo(g).length,0);
+  texto += `Total: ${total}`;
+  return texto;
+}
+
+function textoWhatsAppResumo(){
+  let texto = `*RESUMO*\n`;
+  texto += "```\n";
+  ["F","H","B","D"].forEach(g=>{
+    const eff = effectiveRows(g);
+    const produzindo = eff.filter(r=>r.cap>0).length;
+    const producao = eff.reduce((a,r)=>a+r.cap,0);
+    texto += `${g} ${produzindo}/21 ${producao}un\n`;
+  });
+  texto += "```";
+  return texto;
+}
+
+function copiarTexto(texto, feedbackId){
+  const feedback = document.getElementById(feedbackId);
+  function mostrarFeedback(){
+    if(feedback){
+      feedback.textContent = "✅ Copiado!";
+      setTimeout(()=>{ feedback.textContent = ""; }, 2000);
+    }
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(texto).then(mostrarFeedback).catch(()=>{
+      copiarFallback(texto, mostrarFeedback);
+    });
+  } else {
+    copiarFallback(texto, mostrarFeedback);
+  }
+}
+
+function baixarPDF(g){
+  const eff = effectiveRows(g);
+  const produzindo = eff.filter(r=>r.cap>0).length;
+  const producao = eff.reduce((a,r)=>a+r.cap,0);
+
+  if(!window.jspdf){
+    alert("Não foi possível carregar o gerador de PDF (sem internet no momento?). Verifique a conexão e tente de novo.");
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(15);
+  doc.text(`ESCALA ${g}`, 14, 16);
+  doc.setFontSize(9);
+  doc.setTextColor(120);
+  doc.text(`Folga do grupo ${g} — ${new Date().toLocaleDateString("pt-BR")}`, 14, 22);
+  doc.setTextColor(0);
+
+  doc.autoTable({
+    startY: 28,
+    head: [["Banca","Chapa","Fundidor"]],
+    body: eff.map(r=>[r.banca, r.chapa || "-", r.nome]),
+    styles: {fontSize:9, cellPadding:2.2},
+    headStyles: {fillColor:[40,45,55]},
+    theme: "grid"
+  });
+
+  const finalY = doc.lastAutoTable.finalY || 30;
+  doc.setFontSize(11);
+  doc.setFont(undefined,"bold");
+  doc.text(`Bancas produzindo: ${produzindo}/21`, 14, finalY+10);
+  doc.text(`Total produzido: ${producao} un/dia`, 14, finalY+17);
+
+  doc.save(`escala_${g}.pdf`);
+}
+
+function copiarWhatsApp(g){
+  copiarTexto(textoWhatsApp(g), "copy-feedback-"+g);
+}
+
+function copiarWhatsAppAjudantes(){
+  copiarTexto(textoWhatsAppAjudantes(), "copy-feedback-ajudantes");
+}
+
+function copiarWhatsAppResumo(){
+  copiarTexto(textoWhatsAppResumo(), "copy-feedback-resumo");
+}
+
+function copiarFallback(texto, cb){
+  const ta = document.createElement("textarea");
+  ta.value = texto;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try{ document.execCommand("copy"); cb(); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+function ajudantesTrabalhando(g){
+  let out=[];
+  ["F","H","B","D"].forEach(k=>{ if(k!==g) out = out.concat(AJ[k]); });
+  return out;
+}
+
+function effectiveRows(g){
+  const rows = ESCALAS[g];
+  return rows.map(r=>{
+    const [banca, chapaOrig, nomeOrig, sitOrig] = r;
+    const key = bancaKey(g, banca);
+    const override = BANCA_OVERRIDES[key];
+    if(override !== undefined){
+      if(override === "0"){
+        return {banca, chapa:override, nome:"BANCA TROCANDO", sit:"Parada", cap:0};
+      }
+      if(override === ""){
+        return {banca, chapa:"", nome:"BANCA PARADA", sit:"Parada", cap:0};
+      }
+      const nomeEncontrado = NOME_POR_CHAPA[override];
+      if(nomeEncontrado){
+        return {banca, chapa:override, nome:nomeEncontrado, sit:"Ajustado", cap:CAPACIDADE_BANCA[banca]};
+      } else {
+        return {banca, chapa:override, nome:"⚠️ Chapa não cadastrada", sit:"Verificar", cap:CAPACIDADE_BANCA[banca]};
+      }
+    }
+    return {banca, chapa:chapaOrig, nome:nomeOrig, sit:sitOrig, cap:r[4]};
+  });
+}
+
+function pessoasForaDaEscala(g){
+  const placeholders = ["BANCA PARADA","SEM FOLGUISTA","BANCA TROCANDO"];
+  const baseline = ESCALAS[g].map(r=>r[2]).filter(n=>!placeholders.includes(n));
+  const efetivos = effectiveRows(g).map(r=>r.nome).filter(n=>!placeholders.includes(n) && !n.startsWith("⚠️"));
+  return baseline.filter(n=>!efetivos.includes(n));
+}
+
+function escalaHTML(g){
+  const eff = effectiveRows(g);
+  const produzindo = eff.filter(r=>r.cap>0).length;
+  const producao = eff.reduce((a,r)=>a+r.cap,0);
+  const listaFolga = FOLGA_NOMES[g].concat(SEM_BANCA_FOLGA[g].map(n=>n+" (sem banca fixa)"));
+  const listaTrab = FOLGUISTA_NOMES[g];
+  const ajFolga = AJ[g];
+  const ajTrab = ajudantesTrabalhando(g);
+  const fora = pessoasForaDaEscala(g);
+
+  let html = `<h2><span class="tag tag-${g}">${g}</span> Escala ${g} — Folga do grupo ${g}</h2>`;
+
+  html += `<div class="kpis">
+    <div class="kpi"><div class="n">${produzindo}/21</div><div class="l">bancas produzindo</div></div>
+    <div class="kpi"><div class="n">${producao}</div><div class="l">un/dia</div></div>
+    <div class="kpi"><div class="n">${ajTrab.length}</div><div class="l">ajudantes trabalhando</div></div>
+  </div>`;
+
+  html += `<button class="whatsapp-btn" onclick="copiarWhatsApp('${g}')">📋 Copiar escala para WhatsApp</button>
+  <span id="copy-feedback-${g}" class="copy-feedback"></span>
+  <button class="print-btn" onclick="baixarPDF('${g}')">📄 Baixar PDF (Banca, Chapa, Fundidor, Total)</button>`;
+
+  html += `<div class="cols">
+    <div class="col folga">
+      <h3>🔴 De folga hoje</h3>
+      <ul>${listaFolga.map(n=>`<li>${n}</li>`).join("")}</ul>
+    </div>
+    <div class="col trab">
+      <h3>🔵 Folguistas cobrindo</h3>
+      <ul>${listaTrab.map(n=>`<li>${n}</li>`).join("")}</ul>
+    </div>
+  </div>`;
+
+  html += `<div class="cols">
+    <div class="col folga">
+      <h3>🔴 Ajudantes de folga</h3>
+      <ul>${ajFolga.map(n=>`<li>${n}</li>`).join("")}</ul>
+    </div>
+    <div class="col trab">
+      <h3>🔵 Ajudantes trabalhando (${ajTrab.length})</h3>
+      <ul>${ajTrab.map(n=>`<li>${n}</li>`).join("")}</ul>
+    </div>
+  </div>`;
+
+  html += `<div class="table-wrap"><table><thead><tr><th>Banca</th><th>Chapa</th><th>Fundidor</th><th>Situação</th><th>Capacidade</th></tr></thead><tbody>`;
+  eff.forEach(row=>{
+    const {banca, chapa, nome, sit, cap} = row;
+    const cls = sit==="Fixo"?"row-Fixo":sit==="Folguista"?"row-Folguista":sit==="Ajustado"?"row-Folguista":sit==="Parada"?"row-Parada":"row-Semfolguista";
+    const chapaCell = `<span class="chapa-cell" contenteditable="true" data-escala="${g}" data-banca="${banca}">${chapa}</span>`;
+    html += `<tr class="${cls}"><td>${banca}</td><td>${chapaCell}</td><td>${nome}</td><td>${sit}${(sit==="Sem folguista"||sit==="Verificar")?' <span class="warn">⚠️</span>':''}</td><td>${cap||"-"}</td></tr>`;
+  });
+  html += `</tbody></table></div>`;
+
+  const semBanca = SEM_BANCA_TRABALHANDO[g];
+  if(semBanca.length > 0){
+    html += `<div style="background:var(--panel);border:1px solid var(--border);border-left:3px solid #8a7a4a;border-radius:6px;padding:8px 12px;margin-bottom:10px;">
+      <h3 style="margin:0 0 4px;font-size:.75rem;color:var(--muted);font-weight:600;">Trabalhando hoje, sem banca fixa</h3>
+      <ul style="margin:0;padding-left:16px;font-size:.72rem;color:var(--muted);line-height:1.5;">${semBanca.map(n=>`<li>${n}</li>`).join("")}</ul>
+    </div>`;
+  }
+
+  if(fora.length > 0){
+    html += `<div class="col folga" style="margin-bottom:10px;">
+      <h3>⚠️ Fora da escala (substituídos por ajuste de chapa)</h3>
+      <ul>${fora.map(n=>`<li>${n}</li>`).join("")}</ul>
+    </div>`;
+  }
+
+  return html;
+}
+
+function resumoHTML(){
+  let html = `<h2>Resumo de produção por escala</h2>`;
+  html += `<button class="whatsapp-btn" onclick="copiarWhatsAppResumo()">📋 Copiar resumo para WhatsApp</button>
+  <span id="copy-feedback-resumo" class="copy-feedback"></span>`;
+  html += `<div style="display:flex;gap:6px;margin-bottom:8px;">
+    <button class="whatsapp-btn" style="margin:0;flex:1;" onclick="exportarBackup()">💾 Salvar backup em arquivo</button>
+    <button class="print-btn" style="margin:0;flex:1;" onclick="document.getElementById('input-importar-backup').click()">📂 Carregar backup</button>
+  </div>
+  <p style="color:var(--muted);font-size:.68rem;margin:0 0 10px;">💾 "Salvar backup" baixa um arquivo .json com tudo que está salvo neste dispositivo (todas as abas: Dados Originais, Banco de Dados, chapas editadas). Guarde numa pasta segura. "Carregar backup" traz esses dados de volta.</p>`;
+  html += `<div class="table-wrap"><table><thead><tr><th>Escala</th><th>Paradas</th><th>Produzindo</th><th>Produção (un/dia)</th></tr></thead><tbody>`;
+  ["F","H","B","D"].forEach(g=>{
+    const eff = effectiveRows(g);
+    const produzindo = eff.filter(r=>r.cap>0).length;
+    const producao = eff.reduce((a,r)=>a+r.cap,0);
+    const paradas = eff.filter(r=>r.cap===0).length;
+    html += `<tr><td><span class="tag tag-${g}">${g}</span></td><td>${paradas}</td><td>${produzindo}</td><td>${producao}</td></tr>`;
+  });
+  html += `</tbody></table></div>`;
+
+  let bancasAtivas = 0, capacidadeMaxima = 0;
+  const bancasSempreParadas = [];
+  BANCAS_ALL.forEach(banca=>{
+    const f = FIXO_DATA[banca];
+    if(f && f.grupo){
+      bancasAtivas++;
+      capacidadeMaxima += CAPACIDADE_BANCA[banca] || (banca==="G25"?70:68);
+    } else {
+      bancasSempreParadas.push(banca);
+    }
+  });
+  html += `<p><b>Capacidade máxima (${bancasAtivas} bancas, sem folga):</b> ${capacidadeMaxima} un/dia</p>`;
+
+  ["F","H","B","D"].forEach(g=>{
+    const semFolguista = ESCALAS[g].filter(r=>r[3]==="Sem folguista").map(r=>r[0]);
+    if(semFolguista.length>0){
+      html += `<p class="warn">⚠️ Escala ${g}: ${semFolguista.join(", ")} sem folguista cadastrado — para${semFolguista.length>1?"m":""} nesse dia.</p>`;
+    }
+  });
+
+  if(bancasSempreParadas.length>0){
+    html += `<p>${bancasSempreParadas.join(", ")} ${bancasSempreParadas.length>1?"são bancas fixas paradas":"é uma banca fixa parada"} em todas as escalas — mude o grupo dela em Dados Originais pra ativar.</p>`;
+  }
+  html += `<p style="color:var(--muted);font-size:.7rem;">Calculado em tempo real a partir da aba Dados Originais.</p>`;
+  return html;
+}
+
+function grupoHTML(){
+  const fixosPorGrupo = {F:0,H:0,B:0,D:0};
+  Object.values(FIXO_DATA).forEach(f=>{
+    if(f.grupo && fixosPorGrupo.hasOwnProperty(f.grupo)) fixosPorGrupo[f.grupo]++;
+  });
+
+  const folguistasUnicos = {};
+  Object.values(FOLGUISTA_DATA).forEach(f=>{
+    if(f.nome && f.chapa) folguistasUnicos[f.nome.toUpperCase()] = f.nome;
+  });
+  const folguistasPorGrupo = {F:0,H:0,B:0,D:0};
+  let especiais = 0;
+  Object.values(folguistasUnicos).forEach(nome=>{
+    const g = grupoPessoalPorNome(nome);
+    if(g && folguistasPorGrupo.hasOwnProperty(g)) folguistasPorGrupo[g]++;
+    else especiais++;
+  });
+
+  let html = `<h2>Fundidores por grupo</h2>`;
+  html += `<div class="table-wrap"><table><thead><tr><th>Grupo</th><th>Fixos</th><th>Folguistas</th><th>Total</th></tr></thead><tbody>`;
+  let totalFixos = 0, totalFolg = 0, totalGeral = 0;
+  ["F","H","B","D"].forEach(g=>{
+    const total = fixosPorGrupo[g] + folguistasPorGrupo[g];
+    totalFixos += fixosPorGrupo[g];
+    totalFolg += folguistasPorGrupo[g];
+    totalGeral += total;
+    html += `<tr><td><span class="tag tag-${g}">${g}</span></td><td>${fixosPorGrupo[g]}</td><td>${folguistasPorGrupo[g]}</td><td><b>${total}</b></td></tr>`;
+  });
+  html += `<tr><td><b>Total</b></td><td><b>${totalFixos}</b></td><td><b>${totalFolg}</b></td><td><b>${totalGeral}</b></td></tr>`;
+  html += `</tbody></table></div>`;
+  if(especiais > 0){
+    html += `<p><i>${especiais} folguista(s) com grupo "Especial" (sem F/H/B/D) não entram nessa contagem.</i></p>`;
+  }
+  html += `<p style="color:var(--muted);font-size:.7rem;">Calculado em tempo real a partir da aba Dados Originais.</p>`;
+  return html;
+}
+
+function salvarListaExtras(){
+  try{ localStorage.setItem("listaFundidoresExtras", JSON.stringify(LISTA_FUNDIDORES_EXTRAS)); }catch(e){}
+}
+
+function adicionarFundidorLista(){
+  const nomeInput = document.getElementById("novo-fundidor-nome");
+  const chapaInput = document.getElementById("novo-fundidor-chapa");
+  const grupoInput = document.getElementById("novo-fundidor-grupo");
+  const nome = nomeInput.value.trim().toUpperCase();
+  const chapa = chapaInput.value.trim();
+  const grupo = grupoInput.value;
+  if(!nome || !chapa) return;
+
+  LISTA_FUNDIDORES_EXTRAS.push({nome, chapa, grupo});
+  salvarListaExtras();
+  NOME_POR_CHAPA[chapa] = nome;
+  GRUPO_ORIGINAL_POR_NOME[nome] = grupo;
+
+  nomeInput.value = "";
+  chapaInput.value = "";
+
+  document.getElementById("sec-lista").innerHTML = listaHTML();
+
+  const fb = document.getElementById("copy-feedback-lista");
+  if(fb){
+    fb.textContent = `✅ ${nome} adicionado (grupo ${grupo})!`;
+    setTimeout(()=>{ fb.textContent = ""; }, 2500);
+  }
+}
+
+function mudarGrupoLista(tipo, chave, nomeAttr, novoGrupo){
+  const nome = nomeAttr.replace(/&quot;/g,'"');
+  const nomeUp = nome.toUpperCase();
+
+  if(tipo === "Fixo"){
+    const banca = chave;
+    if(FIXO_DATA[banca]) FIXO_DATA[banca].grupo = novoGrupo;
+    GRUPO_ORIGINAL_POR_NOME[nomeUp] = novoGrupo;
+  } else if(tipo === "Folguista"){
+    FOLGUISTA_GRUPO_PROPRIO[nomeUp] = novoGrupo;
+    GRUPO_ORIGINAL_POR_NOME[nomeUp] = novoGrupo;
+    try{ localStorage.setItem("folguistaGrupoProprio", JSON.stringify(FOLGUISTA_GRUPO_PROPRIO)); }catch(e){}
+  } else if(tipo === "Manual"){
+    const idx = parseInt(chave, 10);
+    if(LISTA_FUNDIDORES_EXTRAS[idx]){
+      LISTA_FUNDIDORES_EXTRAS[idx].grupo = novoGrupo;
+      salvarListaExtras();
+    }
+    GRUPO_ORIGINAL_POR_NOME[nomeUp] = novoGrupo;
+  }
+  try{ localStorage.setItem("grupoOriginalPorNome", JSON.stringify(GRUPO_ORIGINAL_POR_NOME)); }catch(e){}
+
+  // regenera a lista (senao a tabela continua mostrando o grupo antigo, "congelado")
+  LISTA_FUNDIDORES = gerarListaFundidores();
+
+  document.getElementById("sec-lista").innerHTML = listaHTML();
+
+  const fb = document.getElementById("copy-feedback-lista");
+  if(fb){
+    fb.textContent = `✅ ${nome} agora é do grupo ${novoGrupo}.` + (tipo==="Fixo" ? " Lembre de aplicar em Dados Originais pra valer nas escalas." : "");
+    setTimeout(()=>{ fb.textContent = ""; }, 3500);
+  }
+}
+
+function removerFundidorLista(idx){
+  LISTA_FUNDIDORES_EXTRAS.splice(idx,1);
+  salvarListaExtras();
+  document.getElementById("sec-lista").innerHTML = listaHTML();
+}
+
+function listaHTML(){
+  let html = `<h2>Lista completa de fundidores</h2>`;
+
+  const sugestoes = [];
+  ["F","H","B","D"].forEach(g=>AJ[g].forEach(n=>sugestoes.push(n)));
+  LISTA_FUNDIDORES.forEach(r=>sugestoes.push(r[2]));
+  const sugestoesUnicas = [...new Set(sugestoes)].sort();
+
+  html += `<div class="add-ajudante">
+    <input type="text" id="novo-fundidor-nome" list="fundidor-sugestoes" placeholder="Nome...">
+    <datalist id="fundidor-sugestoes">
+      ${sugestoesUnicas.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">`).join("")}
+    </datalist>
+    <input type="text" id="novo-fundidor-chapa" placeholder="Chapa..." style="max-width:70px;background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:.72rem;">
+    <select id="novo-fundidor-grupo">
+      <option value="F">F</option>
+      <option value="H">H</option>
+      <option value="B">B</option>
+      <option value="D">D</option>
+    </select>
+    <button class="add-btn" onclick="adicionarFundidorLista()">+ Adicionar</button>
+  </div>
+  <span id="copy-feedback-lista" class="copy-feedback"></span>`;
+
+  html += `<div class="table-wrap"><table><thead><tr><th>Banca(s)</th><th>Chapa</th><th>Nome</th><th>Tipo</th><th>Grupo</th></tr></thead><tbody>`;
+  LISTA_FUNDIDORES.forEach(r=>{
+    const [banca,chapa,nome,tipo,grupo]=r;
+    const chapaAtual = chapaFor(nome, chapa);
+    const nomeAttr = nome.replace(/"/g,'&quot;');
+    const seletorGrupo = grupo === "Especial"
+      ? `<span class="tag tag-Especial">Especial</span>`
+      : `<select data-lista-tipo="${tipo}" data-lista-chave="${banca}" data-lista-nome="${nomeAttr}" onchange="this.style.background='var(--'+this.value+')'; mudarGrupoLista('${tipo}','${banca}','${nomeAttr}', this.value);" style="-webkit-appearance:none;-moz-appearance:none;appearance:none;background:var(--${grupo});color:#fff;font-weight:700;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:.72rem;">
+          <option value="F" ${grupo==="F"?"selected":""}>F</option>
+          <option value="H" ${grupo==="H"?"selected":""}>H</option>
+          <option value="B" ${grupo==="B"?"selected":""}>B</option>
+          <option value="D" ${grupo==="D"?"selected":""}>D</option>
+        </select>`;
+    html += `<tr><td>${banca}</td><td><span class="chapa-cell" contenteditable="true" data-nome="${nomeAttr}">${chapaAtual}</span></td><td>${nome}</td><td>${tipo}</td><td>${seletorGrupo}</td></tr>`;
+  });
+  LISTA_FUNDIDORES_EXTRAS.forEach((r,idx)=>{
+    const nomeAttr = r.nome.replace(/"/g,'&quot;');
+    const seletorGrupo = `<select data-lista-tipo="Manual" data-lista-chave="${idx}" data-lista-nome="${nomeAttr}" onchange="this.style.background='var(--'+this.value+')'; mudarGrupoLista('Manual','${idx}','${nomeAttr}', this.value);" style="-webkit-appearance:none;-moz-appearance:none;appearance:none;background:var(--${r.grupo});color:#fff;font-weight:700;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:.72rem;">
+        <option value="F" ${r.grupo==="F"?"selected":""}>F</option>
+        <option value="H" ${r.grupo==="H"?"selected":""}>H</option>
+        <option value="B" ${r.grupo==="B"?"selected":""}>B</option>
+        <option value="D" ${r.grupo==="D"?"selected":""}>D</option>
+      </select>`;
+    html += `<tr><td>—</td><td>${r.chapa}</td><td>${r.nome} <span class="tag-extra">extra</span></td><td>Manual</td><td>${seletorGrupo} <span class="del-btn" onclick="removerFundidorLista(${idx})">✕</span></td></tr>`;
+  });
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+let ajudanteFiltro = ["F","H","B","D"];
+
+let AJ_EXTRAS = {};
+try {
+  AJ_EXTRAS = JSON.parse(localStorage.getItem("ajudanteExtras") || "{}");
+} catch(e){ AJ_EXTRAS = {}; }
+["F","H","B","D"].forEach(g=>{ if(!AJ_EXTRAS[g]) AJ_EXTRAS[g] = []; });
+
+function ajudantesDoGrupo(g){
+  return AJ[g].concat(AJ_EXTRAS[g]);
+}
+
+function salvarExtras(){
+  try{ localStorage.setItem("ajudanteExtras", JSON.stringify(AJ_EXTRAS)); }catch(e){}
+}
+
+function adicionarAjudanteExtra(){
+  const input = document.getElementById("novo-ajudante-nome");
+  const select = document.getElementById("novo-ajudante-grupo");
+  const nome = input.value.trim();
+  const grupo = select.value;
+  if(!nome) return;
+  AJ_EXTRAS[grupo].push(nome);
+  salvarExtras();
+  input.value = "";
+  document.getElementById("sec-ajudantes").innerHTML = ajudantesListaHTML();
+}
+
+function removerAjudanteExtra(g, idx){
+  AJ_EXTRAS[g].splice(idx,1);
+  salvarExtras();
+  document.getElementById("sec-ajudantes").innerHTML = ajudantesListaHTML();
+}
+
+function ajudantesListaHTML(){
+  let html = `<h2>Lista de Ajudantes por Grupo</h2>`;
+
+  html += `<div class="filtro-letras">`;
+  ["F","H","B","D"].forEach(g=>{
+    const ativo = ajudanteFiltro.includes(g) ? " active" : "";
+    html += `<button class="filtro-btn filtro-${g}${ativo}" onclick="toggleFiltroAjudante('${g}')">${g}</button>`;
+  });
+  html += `<button class="filtro-btn" onclick="selecionarTodosAjudantes()">Todos</button>`;
+  html += `</div>`;
+
+  const grupos = ["F","H","B","D"].filter(g=>ajudanteFiltro.includes(g));
+  const gruposComExtraForaDoFiltro = ["F","H","B","D"].filter(g=>!ajudanteFiltro.includes(g) && AJ_EXTRAS[g].length>0);
+
+  html += `<div class="kpis">`;
+  grupos.forEach(g=>{
+    html += `<div class="kpi"><div class="n">${ajudantesDoGrupo(g).length}</div><div class="l">Ajudantes ${g}</div></div>`;
+  });
+  const total = grupos.reduce((a,g)=>a+ajudantesDoGrupo(g).length,0);
+  html += `<div class="kpi"><div class="n">${total}</div><div class="l">Total selecionado</div></div>`;
+  html += `</div>`;
+
+  const sugestoes = [];
+  ["F","H","B","D"].forEach(g=>AJ[g].forEach(n=>sugestoes.push(n)));
+  LISTA_FUNDIDORES.forEach(r=>sugestoes.push(r[2]));
+  const sugestoesUnicas = [...new Set(sugestoes)].sort();
+
+  html += `<div class="add-ajudante">
+    <input type="text" id="novo-ajudante-nome" list="ajudante-sugestoes" placeholder="Nome do ajudante ou fundidor...">
+    <datalist id="ajudante-sugestoes">
+      ${sugestoesUnicas.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">`).join("")}
+    </datalist>
+    <select id="novo-ajudante-grupo">
+      <option value="F">F</option>
+      <option value="H">H</option>
+      <option value="B">B</option>
+      <option value="D">D</option>
+    </select>
+    <button class="add-btn" onclick="adicionarAjudanteExtra()">+ Adicionar</button>
+  </div>`;
+
+  html += `<button class="whatsapp-btn" onclick="copiarWhatsAppAjudantes()">📋 Copiar lista para WhatsApp</button>
+  <span id="copy-feedback-ajudantes" class="copy-feedback"></span>`;
+
+  if(grupos.length === 0 && gruposComExtraForaDoFiltro.length === 0){
+    html += `<p style="color:var(--muted);">Nenhum grupo selecionado.</p>`;
+    return html;
+  }
+
+  html += `<div class="table-wrap"><table><thead><tr><th>Grupo</th><th>Ajudante</th></tr></thead><tbody>`;
+  grupos.forEach(g=>{
+    const nomesOriginais = AJ[g];
+    const nomesExtras = AJ_EXTRAS[g];
+    let primeiro = true;
+    nomesOriginais.forEach(nome=>{
+      html += `<tr class="ajrow-${g}">
+        <td>${primeiro ? `<span class="tag tag-${g}">${g}</span>` : ""}</td>
+        <td>${nome}</td>
+      </tr>`;
+      primeiro = false;
+    });
+    nomesExtras.forEach((nome,idx)=>{
+      html += `<tr class="ajrow-${g}">
+        <td>${primeiro ? `<span class="tag tag-${g}">${g}</span>` : ""}</td>
+        <td>${nome} <span class="tag-extra">extra</span> <span class="del-btn" onclick="removerAjudanteExtra('${g}',${idx})">✕</span></td>
+      </tr>`;
+      primeiro = false;
+    });
+  });
+
+  if(gruposComExtraForaDoFiltro.length > 0){
+    gruposComExtraForaDoFiltro.forEach(g=>{
+      let primeiro = true;
+      AJ_EXTRAS[g].forEach((nome,idx)=>{
+        html += `<tr class="ajrow-${g}">
+          <td>${primeiro ? `<span class="tag tag-${g}">${g}</span>` : ""}</td>
+          <td>${nome} <span class="tag-extra">extra</span> <span class="del-btn" onclick="removerAjudanteExtra('${g}',${idx})">✕</span></td>
+        </tr>`;
+        primeiro = false;
+      });
+    });
+  }
+
+  html += `</tbody></table></div>`;
+  html += `<p style="color:var(--muted);font-size:.8rem;">Cada ajudante folga no dia da escala do seu próprio grupo (mesma lógica dos fundidores/folguistas).</p>`;
+  return html;
+}
+
+function toggleFiltroAjudante(g){
+  const idx = ajudanteFiltro.indexOf(g);
+  if(idx>=0){
+    ajudanteFiltro.splice(idx,1);
+  } else {
+    ajudanteFiltro.push(g);
+  }
+  document.getElementById("sec-ajudantes").innerHTML = ajudantesListaHTML();
+}
+
+function selecionarTodosAjudantes(){
+  ajudanteFiltro = ["F","H","B","D"];
+  document.getElementById("sec-ajudantes").innerHTML = ajudantesListaHTML();
+}
+
+const GRUPO_BG = {
+  F: "rgba(91,139,208,.60)",
+  H: "rgba(201,107,107,.60)",
+  B: "rgba(127,166,80,.60)",
+  D: "rgba(217,138,61,.60)",
+  Especial: "rgba(201,180,88,.60)",
+  null: "transparent"
+};
+
+// Grupo pessoal de cada folguista (o grupo em que ele mesmo folga)
+const FOLGUISTA_GRUPO_PROPRIO = {
+  "RONILSON DE JESUS DA SILVA": "F",
+  "ROBSON DE JESUS NASCIMENTO": "F",
+  "CARLOS ANDRE SANTANA": "F",
+  "DIEGO SOUZA NOGUEIRA": "F",
+  "LEONES DE FREITAS SIMOES": "B",
+  "CARLOS RODRIGO ALVES GUIMARAES": "B",
+  "JOSE CARLOS SANTANA": "D",
+  "PHABLO EDUARDO ABREU DE SOUZA": "Especial"
+};
+
+// Carrega mudanças de grupo salvas (feitas na Lista Fundidores), sobrescrevendo o padrão acima
+try{
+  const savedFolgGrupo = JSON.parse(localStorage.getItem("folguistaGrupoProprio") || "{}");
+  Object.assign(FOLGUISTA_GRUPO_PROPRIO, savedFolgGrupo);
+}catch(e){}
+
+function grupoPessoalPorNome(nome, excluirBanca){
+  if(!nome) return null;
+  const nomeUp = nome.toUpperCase();
+  // 1) se a pessoa tem banca fixa propria HOJE (fora a que esta sendo editada agora), o grupo dela e o grupo dessa banca
+  const fixo = Object.entries(FIXO_DATA).find(([b,f])=>b!==excluirBanca && f.nome && f.nome.toUpperCase()===nomeUp);
+  if(fixo && fixo[1].grupo) return fixo[1].grupo;
+  // 2) senao, procura no mapa de folguistas conhecidos
+  if(FOLGUISTA_GRUPO_PROPRIO.hasOwnProperty(nomeUp) && FOLGUISTA_GRUPO_PROPRIO[nomeUp]) return FOLGUISTA_GRUPO_PROPRIO[nomeUp];
+  // 3) por ultimo, o grupo original dela na planilha (mesmo que a banca fixa tenha mudado depois)
+  if(GRUPO_ORIGINAL_POR_NOME.hasOwnProperty(nomeUp)) return GRUPO_ORIGINAL_POR_NOME[nomeUp];
+  return null;
+}
+
+// Calcula, pra cada escala, quem esta trabalhando (nao folga nesse dia) mas nao cobre nenhuma banca dela
+function calcularSemBancaTrabalhando(){
+  const resultado = {F:[],H:[],B:[],D:[]};
+
+  // pessoas unicas registradas como folguista em pelo menos uma banca
+  const folguistasUnicos = {};
+  Object.values(FOLGUISTA_DATA).forEach(f=>{
+    if(f.nome && f.chapa) folguistasUnicos[f.nome.toUpperCase()] = f.nome;
+  });
+
+  Object.values(folguistasUnicos).forEach(nome=>{
+    const grupoProprio = grupoPessoalPorNome(nome);
+    if(!grupoProprio || grupoProprio === "Especial") return; // caso especial, nao entra nessa conta
+    ["F","H","B","D"].forEach(g=>{
+      if(grupoProprio === g) return; // esse e o dia de folga dela, nao conta como "trabalhando"
+      const cobreAlguma = Object.keys(FOLGUISTA_DATA).some(banca=>{
+        const folg = FOLGUISTA_DATA[banca];
+        const fixo = FIXO_DATA[banca];
+        return folg && folg.nome && folg.nome.toUpperCase() === nome.toUpperCase()
+          && fixo && fixo.grupo === g;
+      });
+      if(!cobreAlguma){
+        resultado[g].push(nome);
+      }
+    });
+  });
+
+  return resultado;
+}
+
+SEM_BANCA_TRABALHANDO = calcularSemBancaTrabalhando();
+
+function dadosOriginaisHTML(){
+  let html = `<h2>Dados Originais — Fixo e Folguista</h2>`;
+  html += `<p style="color:var(--muted);font-size:.75rem;margin:0 0 10px;">Edite quem é o fixo (e o grupo F/H/B/D) e quem é o folguista de cada banca. Ao aplicar, as 4 escalas são refeitas do zero com base nisso.</p>`;
+
+  html += `<button class="whatsapp-btn" onclick="aplicarDadosOriginais()" style="background:#1f3d2b;color:#6fdc8c;border-color:#2f6b45;">✅ Aplicar alterações e refazer escalas</button>`;
+  html += `<button class="reset-btn" style="margin-top:6px;" onclick="restaurarDadosOriginais()">Restaurar a Aba</button>`;
+  html += `<button id="btn-tornar-padrao" class="undo-btn" style="margin-top:6px;" onclick="tornarDadosPadrao()">⭐ Salvar dados</button>`;
+
+  const td = "padding:3px 4px;border:1px solid var(--border);";
+  const th = "padding:5px;border:1px solid var(--border);background:#12151b;";
+
+  html += `<div class="table-wrap" style="margin-top:10px;"><table style="border-collapse:collapse;font-size:.7rem;width:100%;">
+    <thead><tr>
+      <th style="${th}background:#665a10;">Banca</th>
+      <th style="${th}" colspan="3">Fixo</th>
+      <th style="${th}" colspan="2">Folguista</th>
+    </tr></thead><tbody>`;
+
+  BANCAS_ALL.forEach(banca=>{
+    const f = FIXO_DATA[banca] || {chapa:"",nome:"",grupo:null};
+    const bg = GRUPO_BG[f.grupo];
+    const folg = FOLGUISTA_DATA[banca] || {chapa:"",nome:""};
+    const grupoFolg = grupoPessoalPorNome(folg.nome);
+    const bgFolg = GRUPO_BG[grupoFolg];
+
+    html += `<tr>
+      <td style="${td}background:#665a10;font-weight:700;">${banca}</td>
+      <td style="${td}background:${bg};"><span class="chapa-cell" contenteditable="true" data-orig="fixo-chapa" data-banca="${banca}" style="font-size:.72rem;font-weight:700;min-height:auto;padding:1px 3px;">${f.chapa||""}</span></td>
+      <td style="${td}background:${bg};"><span class="chapa-cell" contenteditable="true" data-orig="fixo-nome" data-banca="${banca}" style="font-weight:600;font-size:.72rem;min-width:120px;white-space:nowrap;">${f.nome||""}</span></td>
+      <td style="${td}background:${bg};">
+        <span style="position:relative;display:inline-block;min-width:38px;">
+          <span style="font-size:.72rem;font-weight:700;pointer-events:none;">${f.grupo || "Parada"}</span>
+          <select data-orig="fixo-grupo" data-banca="${banca}" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;">
+            <option value="" ${f.grupo===null?"selected":""}>Parada</option>
+            <option value="F" ${f.grupo==="F"?"selected":""}>F</option>
+            <option value="H" ${f.grupo==="H"?"selected":""}>H</option>
+            <option value="B" ${f.grupo==="B"?"selected":""}>B</option>
+            <option value="D" ${f.grupo==="D"?"selected":""}>D</option>
+          </select>
+        </span>
+      </td>`;
+
+    html += `<td style="${td}background:${bgFolg};"><span class="chapa-cell" contenteditable="true" data-orig="folg-chapa" data-banca="${banca}" style="font-size:.72rem;font-weight:700;min-height:auto;padding:1px 3px;">${folg.chapa||""}</span></td>
+      <td style="${td}background:${bgFolg};"><span class="chapa-cell" contenteditable="true" data-orig="folg-nome" data-banca="${banca}" style="font-weight:600;font-size:.72rem;min-width:120px;white-space:nowrap;">${folg.nome||""}</span></td>`;
+
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  html += `<span id="copy-feedback-original" class="copy-feedback"></span>`;
+  return html;
+}
+
+function lerDadosOriginaisDoDOM(){
+  const sec = document.getElementById("sec-original");
+  if(!sec) return;
+  sec.querySelectorAll('[data-orig="fixo-chapa"]').forEach(el=>{
+    const banca = el.dataset.banca;
+    if(!FIXO_DATA[banca]) FIXO_DATA[banca] = {chapa:"",nome:"",grupo:null};
+    FIXO_DATA[banca].chapa = el.textContent.trim();
+  });
+  sec.querySelectorAll('[data-orig="fixo-nome"]').forEach(el=>{
+    const banca = el.dataset.banca;
+    if(!FIXO_DATA[banca]) FIXO_DATA[banca] = {chapa:"",nome:"",grupo:null};
+    FIXO_DATA[banca].nome = el.textContent.trim();
+  });
+  sec.querySelectorAll('select[data-orig="fixo-grupo"]').forEach(el=>{
+    const banca = el.dataset.banca;
+    if(!FIXO_DATA[banca]) FIXO_DATA[banca] = {chapa:"",nome:"",grupo:null};
+    FIXO_DATA[banca].grupo = el.value || null;
+    if(FIXO_DATA[banca].grupo === null && !FIXO_DATA[banca].nome){
+      FIXO_DATA[banca].nome = "BANCA PARADA";
+    }
+  });
+  sec.querySelectorAll('[data-orig="folg-chapa"]').forEach(el=>{
+    const banca = el.dataset.banca;
+    if(!FOLGUISTA_DATA[banca]) FOLGUISTA_DATA[banca] = {chapa:"",nome:""};
+    FOLGUISTA_DATA[banca].chapa = el.textContent.trim();
+  });
+  sec.querySelectorAll('[data-orig="folg-nome"]').forEach(el=>{
+    const banca = el.dataset.banca;
+    if(!FOLGUISTA_DATA[banca]) FOLGUISTA_DATA[banca] = {chapa:"",nome:""};
+    FOLGUISTA_DATA[banca].nome = el.textContent.trim();
+  });
+}
+
+function aplicarDadosOriginais(){
+  lerDadosOriginaisDoDOM();
+
+  // limpa ajustes avulsos antigos feitos direto nas escalas, pra nao mascarar os novos dados originais
+  BANCA_OVERRIDES = {};
+  try{ localStorage.removeItem("bancaOverrides"); }catch(e){}
+
+  try{
+    localStorage.setItem("fixoData", JSON.stringify(FIXO_DATA));
+    localStorage.setItem("folguistaData", JSON.stringify(FOLGUISTA_DATA));
+  }catch(e){}
+
+  ESCALAS = gerarEscalas();
+  NOME_POR_CHAPA = construirNomePorChapa();
+  LISTA_FUNDIDORES = gerarListaFundidores();
+  SEM_BANCA_TRABALHANDO = calcularSemBancaTrabalhando();
+  sincronizarBancasBancoDados();
+  CAPACIDADE_BANCA = {};
+  ["F","H","B","D"].forEach(g=>{
+    ESCALAS[g].forEach(r=>{ CAPACIDADE_BANCA[r[0]] = (r[0]==="G25") ? 70 : 68; });
+  });
+
+  renderAll();
+  showSection(activeTab);
+
+  const fb = document.getElementById("copy-feedback-original");
+  if(fb){
+    fb.textContent = "✅ Escalas refeitas com os novos dados!";
+    setTimeout(()=>{ fb.textContent = ""; }, 2500);
+  }
+}
+
+function restaurarDadosOriginais(){
+  let d;
+  try{
+    const baseFixo = JSON.parse(localStorage.getItem("fixoDataBaseline"));
+    const baseFolg = JSON.parse(localStorage.getItem("folguistaDataBaseline"));
+    if(baseFixo && baseFolg){
+      d = {fixo: baseFixo, folguista: baseFolg};
+    }
+  }catch(e){}
+  if(!d) d = derivarDadosOriginais();
+
+  FIXO_DATA = d.fixo;
+  FOLGUISTA_DATA = d.folguista;
+  try{
+    localStorage.removeItem("fixoData");
+    localStorage.removeItem("folguistaData");
+  }catch(e){}
+  aplicarDadosOriginais();
+}
+
+let tornarPadraoPendente = false;
+let tornarPadraoTimeoutId = null;
+
+function tornarDadosPadrao(){
+  const btn = document.getElementById("btn-tornar-padrao");
+  if(!tornarPadraoPendente){
+    tornarPadraoPendente = true;
+    if(btn){
+      btn.textContent = "Toque de novo para confirmar";
+      btn.classList.add("confirm-pending");
+    }
+    tornarPadraoTimeoutId = setTimeout(()=>{
+      tornarPadraoPendente = false;
+      if(btn){
+        btn.textContent = "⭐ Salvar dados";
+        btn.classList.remove("confirm-pending");
+      }
+    }, 3000);
+    return;
+  }
+
+  clearTimeout(tornarPadraoTimeoutId);
+  tornarPadraoPendente = false;
+
+  // captura qualquer edicao que ainda esteja na tela mas nao foi confirmada
+  lerDadosOriginaisDoDOM();
+
+  let salvouOk = true;
+  try{
+    // salva nas DUAS gavetas: padrao e sessao atual
+    // (se salvasse so no padrao, a gaveta de sessao antiga sobrescreveria ao recarregar)
+    localStorage.setItem("fixoDataBaseline", JSON.stringify(FIXO_DATA));
+    localStorage.setItem("folguistaDataBaseline", JSON.stringify(FOLGUISTA_DATA));
+    localStorage.setItem("fixoData", JSON.stringify(FIXO_DATA));
+    localStorage.setItem("folguistaData", JSON.stringify(FOLGUISTA_DATA));
+  }catch(e){
+    salvouOk = false;
+  }
+
+  // atualiza tambem os mapas permanentes de nome/grupo, pra ficarem coerentes com o novo padrao
+  Object.values(FIXO_DATA).forEach(f=>{
+    if(f.chapa) NOME_POR_CHAPA_ORIGINAL[f.chapa] = f.nome;
+    if(f.nome && f.grupo) GRUPO_ORIGINAL_POR_NOME[f.nome.toUpperCase()] = f.grupo;
+  });
+  Object.values(FOLGUISTA_DATA).forEach(f=>{
+    if(f.chapa) NOME_POR_CHAPA_ORIGINAL[f.chapa] = f.nome;
+  });
+
+  if(btn){
+    btn.textContent = salvouOk ? "✅ Padrão atualizado!" : "⚠️ Falha ao salvar!";
+    btn.classList.remove("confirm-pending");
+    setTimeout(()=>{
+      btn.textContent = "⭐ Salvar dados";
+    }, 2000);
+  }
+}
+
+const BANCO_DADOS_PADRAO = [
+  {nome:"RICARDO DE JESUS AMORIM", tipo:"Fundidor", grupo:"F", chapa:"", banca:""},
+  {nome:"ROBSON DE JESUS NASCIMENTO", tipo:"Fundidor", grupo:"F", chapa:"", banca:""},
+  {nome:"DIEGO SOUZA NOGUEIRA", tipo:"Fundidor", grupo:"F", chapa:"", banca:""},
+  {nome:"RONILSON DE JESUS DA SILVA", tipo:"Fundidor", grupo:"F", chapa:"", banca:""},
+  {nome:"GILSIMAR PEREIRA DUARTE", tipo:"Fundidor", grupo:"F", chapa:"", banca:""},
+  {nome:"ALEXANDRE DE OLIVEIRA BRITO", tipo:"Fundidor", grupo:"F", chapa:"576", banca:"G03"},
+  {nome:"CARLOS ANDRE SANTANA DOS SANTOS", tipo:"Fundidor", grupo:"F", chapa:"565", banca:"G02, G11, G12"},
+  {nome:"LEANDRO DE FREITAS SIMOES", tipo:"Ajudante", grupo:"F", chapa:"", banca:""},
+  {nome:"RODRIGO CARMO BARROS", tipo:"Ajudante", grupo:"F", chapa:"", banca:""},
+  {nome:"CARLOS HENRIQUE DE SOUZA SOBRINHO", tipo:"Ajudante", grupo:"F", chapa:"", banca:""},
+  {nome:"DIEGO DOS SANTOS GUIMARAES", tipo:"Fundidor", grupo:"H", chapa:"", banca:""},
+  {nome:"TIAGO DOS SANTOS GUIMARAES", tipo:"Fundidor", grupo:"H", chapa:"599", banca:"G05"},
+  {nome:"ADAILSON COITINHO RODRIGUES", tipo:"Fundidor", grupo:"H", chapa:"575", banca:"G04"},
+  {nome:"RYALISSON RODRIGUES SIMOES", tipo:"Fundidor", grupo:"H", chapa:"", banca:""},
+  {nome:"MARCOS VINICIUS DE SOUZA ARCHANJO", tipo:"Fundidor", grupo:"H", chapa:"", banca:""},
+  {nome:"MARCOS AURELIO DE SOUSA PAES", tipo:"Fundidor", grupo:"H", chapa:"", banca:""},
+  {nome:"RENATO SANTOS FERREIRA", tipo:"Ajudante", grupo:"H", chapa:"", banca:""},
+  {nome:"NALBERTH JUNIOR RAULINO SANTANA", tipo:"Ajudante", grupo:"H", chapa:"", banca:""},
+  {nome:"CARLOS EDUARDO SAMPAIO", tipo:"Ajudante", grupo:"H", chapa:"", banca:""},
+  {nome:"JEAN GUILHERME MENDES BATISTA", tipo:"Fundidor", grupo:"B", chapa:"", banca:""},
+  {nome:"JOSE MATIM ALIPRANDI SANT ANNA", tipo:"Fundidor", grupo:"B", chapa:"588", banca:"G08"},
+  {nome:"LEONES DE FREITAS SIMOES", tipo:"Fundidor", grupo:"B", chapa:"", banca:""},
+  {nome:"CARLOS RODRIGO ALVES GUIMARAES", tipo:"Fundidor", grupo:"B", chapa:"", banca:""},
+  {nome:"FELIPE SANTOS MOREIRA", tipo:"Fundidor", grupo:"B", chapa:"", banca:""},
+  {nome:"EDUARDO DOS SANTOS MARTINS", tipo:"Fundidor", grupo:"B", chapa:"", banca:""},
+  {nome:"GUSTAVO BARRETO DE CARVALHO", tipo:"Fundidor", grupo:"B", chapa:"", banca:""},
+  {nome:"UELLISON COSTA DE JESUS", tipo:"Ajudante", grupo:"B", chapa:"", banca:""},
+  {nome:"LUCAS COSTA SANTOS", tipo:"Ajudante", grupo:"B", chapa:"", banca:""},
+  {nome:"LUIZ RICARDO PEREIRA DE JESUS", tipo:"Ajudante", grupo:"B", chapa:"", banca:""},
+  {nome:"ALEXSANDRO PEREIRA CERQUEIRA", tipo:"Ajudante", grupo:"B", chapa:"", banca:""},
+  {nome:"ISMAEL MIRANDA DOS SANTOS", tipo:"Fundidor", grupo:"D", chapa:"", banca:""},
+  {nome:"MATEUS DE SOUZA DE ALMEIDA", tipo:"Fundidor", grupo:"D", chapa:"572", banca:"G07"},
+  {nome:"JOSE CARVALHO DOS SANTOS", tipo:"Fundidor", grupo:"D", chapa:"", banca:""},
+  {nome:"EDSON FRANCISCO DA SILVA", tipo:"Fundidor", grupo:"D", chapa:"", banca:""},
+  {nome:"ANTONIO MARCOS CANTAO FERREIRA", tipo:"Fundidor", grupo:"D", chapa:"", banca:""},
+  {nome:"GUSTAVO TONNI ARMONDES AMORIN", tipo:"Fundidor", grupo:"D", chapa:"", banca:""},
+  {nome:"JOSE CARLOS SANTANA", tipo:"Fundidor", grupo:"D", chapa:"", banca:""},
+  {nome:"LUCAS FERREIRA SANTOS", tipo:"Fundidor", grupo:"D", chapa:"", banca:""},
+  {nome:"EMAWXUELL DA SILVA CHAVES", tipo:"Ajudante", grupo:"D", chapa:"", banca:""},
+  {nome:"ERICK AUGUSTO BOREL DO AMARAL", tipo:"Ajudante", grupo:"D", chapa:"", banca:""}
+];
+
+let BANCO_DADOS_LISTA = [];
+try{
+  const salvo = JSON.parse(localStorage.getItem("bancoDadosLista"));
+  BANCO_DADOS_LISTA = salvo && salvo.length ? salvo : JSON.parse(JSON.stringify(BANCO_DADOS_PADRAO));
+}catch(e){
+  BANCO_DADOS_LISTA = JSON.parse(JSON.stringify(BANCO_DADOS_PADRAO));
+}
+
+function salvarBancoDados(){
+  try{ localStorage.setItem("bancoDadosLista", JSON.stringify(BANCO_DADOS_LISTA)); }catch(e){}
+}
+
+function adicionarBancoDados(){
+  const nomeInput = document.getElementById("bd-novo-nome");
+  const chapaInput = document.getElementById("bd-novo-chapa");
+  const tipoInput = document.getElementById("bd-novo-tipo");
+  const grupoInput = document.getElementById("bd-novo-grupo");
+  const nome = nomeInput.value.trim().toUpperCase();
+  if(!nome) return;
+  BANCO_DADOS_LISTA.push({nome, chapa: chapaInput.value.trim(), tipo: tipoInput.value, grupo: grupoInput.value});
+  salvarBancoDados();
+  nomeInput.value = "";
+  chapaInput.value = "";
+  document.getElementById("sec-bancodados").innerHTML = bancoDadosHTML();
+}
+
+function removerBancoDados(idx){
+  BANCO_DADOS_LISTA.splice(idx,1);
+  salvarBancoDados();
+  document.getElementById("sec-bancodados").innerHTML = bancoDadosHTML();
+}
+
+function mudarGrupoBancoDados(idx, novoGrupo){
+  if(BANCO_DADOS_LISTA[idx]){
+    BANCO_DADOS_LISTA[idx].grupo = novoGrupo;
+    salvarBancoDados();
+  }
+  document.getElementById("sec-bancodados").innerHTML = bancoDadosHTML();
+}
+
+function mudarChapaBancoDados(idx, novaChapa){
+  if(BANCO_DADOS_LISTA[idx]){
+    BANCO_DADOS_LISTA[idx].chapa = novaChapa.trim();
+    salvarBancoDados();
+  }
+}
+
+function mudarBancaBancoDados(idx, novaBanca){
+  if(BANCO_DADOS_LISTA[idx]){
+    BANCO_DADOS_LISTA[idx].banca = novaBanca.trim();
+    salvarBancoDados();
+  }
+}
+
+function normalizaNome(s){
+  return s.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().replace(/\s+/g," ");
+}
+
+function importarDaListaFundidores(){
+  let encontrados = 0;
+  const naoEncontrados = [];
+  BANCO_DADOS_LISTA.forEach(p=>{
+    const alvo = normalizaNome(p.nome);
+    const row = LISTA_FUNDIDORES.find(r=>normalizaNome(r[2])===alvo);
+    if(row){
+      p.chapa = row[1];
+      p.banca = row[0];
+      encontrados++;
+    } else {
+      naoEncontrados.push(p.nome);
+    }
+  });
+  salvarBancoDados();
+  document.getElementById("sec-bancodados").innerHTML = bancoDadosHTML();
+
+  const fb = document.getElementById("copy-feedback-bancodados");
+  if(fb){
+    fb.textContent = naoEncontrados.length > 0
+      ? `✅ ${encontrados} encontrados. ⚠️ ${naoEncontrados.length} sem correspondência exata: ${naoEncontrados.join(", ")}`
+      : `✅ Todos os ${encontrados} encontrados e preenchidos!`;
+  }
+}
+
+function atualizarNomesEmDadosOriginais(){
+  let atualizados = 0;
+  const detalhes = [];
+
+  BANCO_DADOS_LISTA.forEach(p=>{
+    if(!p.chapa) return;
+    Object.keys(FIXO_DATA).forEach(b=>{
+      if(FIXO_DATA[b].chapa === p.chapa && FIXO_DATA[b].nome !== p.nome){
+        detalhes.push(`${b} (Fixo): "${FIXO_DATA[b].nome}" → "${p.nome}"`);
+        FIXO_DATA[b].nome = p.nome;
+        atualizados++;
+      }
+    });
+    Object.keys(FOLGUISTA_DATA).forEach(b=>{
+      if(FOLGUISTA_DATA[b].chapa === p.chapa && FOLGUISTA_DATA[b].nome !== p.nome){
+        detalhes.push(`${b} (Folguista): "${FOLGUISTA_DATA[b].nome}" → "${p.nome}"`);
+        FOLGUISTA_DATA[b].nome = p.nome;
+        atualizados++;
+      }
+    });
+  });
+
+  if(atualizados > 0){
+    try{
+      localStorage.setItem("fixoData", JSON.stringify(FIXO_DATA));
+      localStorage.setItem("folguistaData", JSON.stringify(FOLGUISTA_DATA));
+    }catch(e){}
+    NOME_POR_CHAPA = construirNomePorChapa();
+    ESCALAS = gerarEscalas();
+    LISTA_FUNDIDORES = gerarListaFundidores();
+    SEM_BANCA_TRABALHANDO = calcularSemBancaTrabalhando();
+  }
+
+  document.getElementById("sec-bancodados").innerHTML = bancoDadosHTML();
+
+  const fb = document.getElementById("copy-feedback-bancodados");
+  if(fb){
+    fb.textContent = atualizados > 0
+      ? `✅ ${atualizados} nome(s) corrigido(s) em Dados Originais: ${detalhes.join(" | ")}`
+      : `Nenhum nome diferente encontrado — já estava tudo igual.`;
+  }
+}
+
+function sincronizarBancasBancoDados(){
+  let atualizados = 0;
+  const semBanca = [];
+  BANCO_DADOS_LISTA.forEach(p=>{
+    if(!p.chapa){ return; }
+    const ocorrencias = [];
+    Object.keys(FIXO_DATA).forEach(b=>{
+      if(FIXO_DATA[b].chapa === p.chapa) ocorrencias.push(b);
+    });
+    Object.keys(FOLGUISTA_DATA).forEach(b=>{
+      if(FOLGUISTA_DATA[b].chapa === p.chapa) ocorrencias.push(b);
+    });
+    const novaBanca = ocorrencias.join(", ");
+    if(ocorrencias.length > 0){
+      if(p.banca !== novaBanca) atualizados++;
+      p.banca = novaBanca;
+    } else {
+      semBanca.push(`${p.nome} (chapa ${p.chapa})`);
+    }
+  });
+  if(atualizados > 0) salvarBancoDados();
+  return {atualizados, semBanca};
+}
+
+function atualizarBancasDeDadosOriginais(){
+  const {atualizados, semBanca} = sincronizarBancasBancoDados();
+  document.getElementById("sec-bancodados").innerHTML = bancoDadosHTML();
+  const fb = document.getElementById("copy-feedback-bancodados");
+  if(fb){
+    fb.textContent = semBanca.length > 0
+      ? `✅ ${atualizados} banca(s) atualizada(s). ⚠️ ${semBanca.length} chapa(s) não encontradas em Dados Originais: ${semBanca.join(", ")}`
+      : `✅ ${atualizados} banca(s) atualizada(s) a partir de Dados Originais!`;
+  }
+}
+
+function corrigirChapaBancaTrocada(){
+  let corrigidos = 0;
+  BANCO_DADOS_LISTA.forEach(p=>{
+    const chapaPareceBanca = /^G\d+/i.test((p.chapa||"").trim());
+    const bancaPareceChapa = /^\d+$/.test((p.banca||"").trim());
+    if(chapaPareceBanca && (bancaPareceChapa || !p.banca)){
+      const temp = p.chapa;
+      p.chapa = p.banca;
+      p.banca = temp;
+      corrigidos++;
+    } else if(bancaPareceChapa && !p.chapa){
+      // banca tem numero de chapa e o campo chapa esta vazio: so troca
+      p.chapa = p.banca;
+      p.banca = "";
+      corrigidos++;
+    }
+  });
+  salvarBancoDados();
+  document.getElementById("sec-bancodados").innerHTML = bancoDadosHTML();
+  const fb = document.getElementById("copy-feedback-bancodados");
+  if(fb){
+    fb.textContent = corrigidos > 0
+      ? `✅ ${corrigidos} registro(s) corrigido(s) — chapa e banca estavam trocados.`
+      : `Nenhum campo trocado foi encontrado.`;
+  }
+}
+
+function conferirChapasBancoDados(){
+  const conflitos = [];
+  const semCadastro = [];
+  const fundidoresSemChapa = [];
+  let ok = 0, ajudantesSemChapa = 0;
+
+  BANCO_DADOS_LISTA.forEach(p=>{
+    if(!p.chapa){
+      if(p.tipo === "Ajudante"){
+        ajudantesSemChapa++;
+      } else {
+        fundidoresSemChapa.push(p.nome);
+      }
+      return;
+    }
+    const nomeOriginal = NOME_POR_CHAPA[p.chapa] || NOME_POR_CHAPA_ORIGINAL[p.chapa];
+    if(!nomeOriginal){
+      semCadastro.push(`${p.nome} (chapa ${p.chapa})`);
+    } else if(normalizaNome(nomeOriginal) !== normalizaNome(p.nome)){
+      conflitos.push(`${p.nome} tem chapa ${p.chapa}, mas em Dados Originais essa chapa é de "${nomeOriginal}"`);
+    } else {
+      ok++;
+    }
+  });
+
+  const sec = document.getElementById("sec-bancodados");
+  let relatorio = `<div style="background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:10px 0;">
+    <h3 style="margin:0 0 6px;font-size:.82rem;">Conferência: Banco de Dados × Dados Originais</h3>
+    <p style="margin:2px 0;font-size:.75rem;color:#6fdc8c;">✅ ${ok} chapa(s) conferem certinho</p>`;
+  if(ajudantesSemChapa>0) relatorio += `<p style="margin:2px 0;font-size:.75rem;color:var(--muted);">— ${ajudantesSemChapa} ajudante(s) sem chapa (normal, ajudantes não têm chapa cadastrada em lugar nenhum)</p>`;
+  if(fundidoresSemChapa.length>0){
+    relatorio += `<p style="margin:6px 0 2px;font-size:.75rem;color:var(--muted);">📋 ${fundidoresSemChapa.length} fundidor(es) ainda sem chapa preenchida:</p>
+      <ul style="margin:0;padding-left:16px;font-size:.7rem;color:var(--muted);">${fundidoresSemChapa.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+  }
+  if(semCadastro.length>0){
+    relatorio += `<p style="margin:6px 0 2px;font-size:.75rem;color:#e8b84a;">⚠️ ${semCadastro.length} chapa(s) não existem em Dados Originais:</p>
+      <ul style="margin:0;padding-left:16px;font-size:.7rem;color:#e8b84a;">${semCadastro.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+  }
+  if(conflitos.length>0){
+    relatorio += `<p style="margin:6px 0 2px;font-size:.75rem;color:#e88;">🚨 ${conflitos.length} conflito(s) — mesma chapa em pessoas diferentes:</p>
+      <ul style="margin:0;padding-left:16px;font-size:.7rem;color:#e88;">${conflitos.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+  }
+  if(semCadastro.length===0 && conflitos.length===0){
+    relatorio += `<p style="margin:6px 0 0;font-size:.75rem;">🎉 Nenhuma inconsistência encontrada!</p>`;
+  }
+  relatorio += `</div>`;
+
+  if(sec) sec.innerHTML = bancoDadosHTML() + relatorio;
+}
+
+function restaurarBancoDados(){
+  let padrao = BANCO_DADOS_PADRAO;
+  try{
+    const salvo = JSON.parse(localStorage.getItem("bancoDadosPadrao"));
+    if(salvo && salvo.length) padrao = salvo;
+  }catch(e){}
+  BANCO_DADOS_LISTA = JSON.parse(JSON.stringify(padrao));
+  salvarBancoDados();
+  document.getElementById("sec-bancodados").innerHTML = bancoDadosHTML();
+}
+
+let bdSalvarPadraoPendente = false;
+let bdSalvarPadraoTimeoutId = null;
+
+function salvarBancoDadosComoOriginal(){
+  const btn = document.getElementById("btn-bd-salvar-padrao");
+  if(!bdSalvarPadraoPendente){
+    bdSalvarPadraoPendente = true;
+    if(btn){
+      btn.textContent = "Toque de novo para confirmar";
+      btn.classList.add("confirm-pending");
+    }
+    bdSalvarPadraoTimeoutId = setTimeout(()=>{
+      bdSalvarPadraoPendente = false;
+      if(btn){
+        btn.textContent = "⭐ Salvar dados";
+        btn.classList.remove("confirm-pending");
+      }
+    }, 3000);
+    return;
+  }
+
+  clearTimeout(bdSalvarPadraoTimeoutId);
+  bdSalvarPadraoPendente = false;
+  try{
+    localStorage.setItem("bancoDadosPadrao", JSON.stringify(BANCO_DADOS_LISTA));
+  }catch(e){}
+
+  if(btn){
+    btn.textContent = "✅ Salvo como original!";
+    btn.classList.remove("confirm-pending");
+    setTimeout(()=>{ btn.textContent = "⭐ Salvar dados"; }, 2000);
+  }
+}
+
+let bdOrdenarColuna = "grupo";
+let bdOrdenarDirecao = "asc";
+
+function bdOrdenarPor(coluna){
+  if(bdOrdenarColuna === coluna){
+    bdOrdenarDirecao = bdOrdenarDirecao === "asc" ? "desc" : "asc";
+  } else {
+    bdOrdenarColuna = coluna;
+    bdOrdenarDirecao = "asc";
+  }
+  document.getElementById("sec-bancodados").innerHTML = bancoDadosHTML();
+}
+
+function bancoDadosHTML(){
+  const ordemGrupo = {F:0,H:1,B:2,D:3};
+  const dir = bdOrdenarDirecao === "asc" ? 1 : -1;
+
+  BANCO_DADOS_LISTA.sort((a,b)=>{
+    if(bdOrdenarColuna === "grupo"){
+      if(ordemGrupo[a.grupo] !== ordemGrupo[b.grupo]) return dir*(ordemGrupo[a.grupo]-ordemGrupo[b.grupo]);
+    } else if(bdOrdenarColuna === "banca"){
+      const ba = (a.banca||"").trim(), bb = (b.banca||"").trim();
+      const aVazia = !ba, bVazia = !bb;
+      const aMulti = ba.includes(",");
+      const bMulti = bb.includes(",");
+      // ordem de grupo: banca unica (G01..G25) primeiro, depois folguista (multiplas bancas), depois vazia
+      const grupoOrdemA = aVazia ? 2 : (aMulti ? 1 : 0);
+      const grupoOrdemB = bVazia ? 2 : (bMulti ? 1 : 0);
+      if(grupoOrdemA !== grupoOrdemB) return dir*(grupoOrdemA - grupoOrdemB);
+      if(ba !== bb) return dir*ba.localeCompare(bb, undefined, {numeric:true});
+    }
+    if(a.tipo !== b.tipo) return a.tipo === "Fundidor" ? -1 : 1;
+    return a.nome.localeCompare(b.nome);
+  });
+
+  const seta = (coluna) => bdOrdenarColuna === coluna ? (bdOrdenarDirecao === "asc" ? " ▲" : " ▼") : " ⇅";
+
+  let html = `<h2>Banco de Dados — Todos os Funcionários</h2>`;
+  html += `<p style="color:var(--muted);font-size:.72rem;margin:0 0 10px;">Lista independente de fundidores e ajudantes por grupo (F/H/B/D). Não afeta escalas, dados originais nem nenhuma outra aba — é só informativo.</p>`;
+
+  html += `<div class="add-ajudante">
+    <input type="text" id="bd-novo-nome" placeholder="Nome...">
+    <input type="text" id="bd-novo-chapa" placeholder="Chapa..." style="max-width:80px;background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:.72rem;">
+    <select id="bd-novo-tipo">
+      <option value="Fundidor">Fundidor</option>
+      <option value="Ajudante">Ajudante</option>
+    </select>
+    <select id="bd-novo-grupo">
+      <option value="F">F</option>
+      <option value="H">H</option>
+      <option value="B">B</option>
+      <option value="D">D</option>
+    </select>
+    <button class="add-btn" onclick="adicionarBancoDados()">+ Adicionar</button>
+  </div>
+  <button class="whatsapp-btn" style="margin-top:6px;" onclick="importarDaListaFundidores()">🔄 Buscar chapa e banca na Lista Fundidores</button>
+  <button class="whatsapp-btn" style="margin-top:6px;" onclick="atualizarBancasDeDadosOriginais()">📍 Buscar bancas em Dados Originais (pela chapa)</button>
+  <button id="btn-bd-atualizar-nomes" class="undo-btn" style="margin-top:6px;" onclick="atualizarNomesEmDadosOriginais()">📝 Corrigir nomes em Dados Originais</button>
+  <button class="print-btn" style="margin-top:6px;" onclick="conferirChapasBancoDados()">🔍 Conferir chapas com Dados Originais</button>
+  <button class="undo-btn" style="margin-top:6px;" onclick="corrigirChapaBancaTrocada()">🔀 Corrigir chapa/banca trocados</button>
+  <span id="copy-feedback-bancodados" class="copy-feedback"></span>
+  <button class="reset-btn" onclick="restaurarBancoDados()">Restaurar a Aba</button>
+  <button id="btn-bd-salvar-padrao" class="undo-btn" style="margin-top:6px;" onclick="salvarBancoDadosComoOriginal()">⭐ Salvar dados</button>`;
+
+  const contagem = {F:{Fundidor:0,Ajudante:0}, H:{Fundidor:0,Ajudante:0}, B:{Fundidor:0,Ajudante:0}, D:{Fundidor:0,Ajudante:0}};
+  BANCO_DADOS_LISTA.forEach(p=>{
+    if(contagem[p.grupo]) contagem[p.grupo][p.tipo]++;
+  });
+  let totalF=0, totalAj=0;
+  html += `<div class="kpis">`;
+  ["F","H","B","D"].forEach(g=>{
+    const f = contagem[g].Fundidor, a = contagem[g].Ajudante;
+    totalF += f; totalAj += a;
+    html += `<div class="kpi"><div class="n">${f+a}</div><div class="l">${g}: ${f} fund. + ${a} aj.</div></div>`;
+  });
+  html += `<div class="kpi"><div class="n">${totalF}</div><div class="l">Total Fundidores</div></div>
+    <div class="kpi"><div class="n">${totalAj}</div><div class="l">Total Ajudantes</div></div>
+    <div class="kpi"><div class="n">${totalF+totalAj}</div><div class="l">Total Geral</div></div>
+  </div>`;
+
+  html += `<div class="table-wrap"><table><thead><tr><th onclick="bdOrdenarPor('grupo')" style="cursor:pointer;">Grupo${seta("grupo")}</th><th>Chapa</th><th onclick="bdOrdenarPor('banca')" style="cursor:pointer;">Banca(s)${seta("banca")}</th><th>Tipo</th><th>Nome</th><th></th></tr></thead><tbody>`;
+  BANCO_DADOS_LISTA.forEach((p,idx)=>{
+    html += `<tr class="ajrow-${p.grupo}">
+      <td>
+        <select onchange="mudarGrupoBancoDados(${idx}, this.value)" style="-webkit-appearance:none;-moz-appearance:none;appearance:none;background:var(--${p.grupo});color:#fff;font-weight:900;border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-size:1.05rem;">
+          <option value="F" ${p.grupo==="F"?"selected":""}>F</option>
+          <option value="H" ${p.grupo==="H"?"selected":""}>H</option>
+          <option value="B" ${p.grupo==="B"?"selected":""}>B</option>
+          <option value="D" ${p.grupo==="D"?"selected":""}>D</option>
+        </select>
+      </td>
+      <td><span class="chapa-cell" contenteditable="true" data-bd-campo="chapa" data-bd-idx="${idx}">${p.chapa||""}</span></td>
+      <td><span class="chapa-cell" contenteditable="true" data-bd-campo="banca" data-bd-idx="${idx}" style="font-size:.7rem;font-weight:400;min-width:60px;">${p.banca||""}</span></td>
+      <td>${p.tipo}</td>
+      <td>${p.nome}</td>
+      <td><span class="del-btn" onclick="removerBancoDados(${idx})">✕</span></td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
+  return html;
+}
+const SECOES = [
+  {id:"resumo", label:"Resumo", render:resumoHTML},
+  {id:"F", label:"Escala F", render:()=>escalaHTML("F")},
+  {id:"H", label:"Escala H", render:()=>escalaHTML("H")},
+  {id:"B", label:"Escala B", render:()=>escalaHTML("B")},
+  {id:"D", label:"Escala D", render:()=>escalaHTML("D")},
+  {id:"grupo", label:"Fundidores por Grupo", render:grupoHTML},
+  {id:"lista", label:"Lista Fundidores", render:listaHTML},
+  {id:"ajudantes", label:"Lista Ajudantes", render:ajudantesListaHTML},
+  {id:"original", label:"Dados Originais", render:dadosOriginaisHTML},
+  {id:"bancodados", label:"Banco de Dados", render:bancoDadosHTML},
+];
+
+// ---- Diagnostico: verifica se o navegador realmente permite salvar dados ----
+(function checarArmazenamento(){
+  let funciona = false;
+  let motivo = "";
+  try{
+    const teste = "__teste_armazenamento__";
+    localStorage.setItem(teste, "1");
+    funciona = localStorage.getItem(teste) === "1";
+    localStorage.removeItem(teste);
+    if(!funciona) motivo = "o navegador aceitou gravar mas não devolveu o valor";
+  }catch(err){
+    funciona = false;
+    motivo = (err && err.message) ? err.message : "acesso negado";
+  }
+
+  if(!funciona){
+    const aviso = document.createElement("div");
+    aviso.style.cssText = "background:#5a2020;color:#ffd9d9;border:2px solid #e88;border-radius:8px;padding:10px 14px;margin:8px;font-size:.78rem;line-height:1.5;";
+    aviso.innerHTML = `<b>⚠️ Este navegador não está salvando os dados</b><br>
+      Motivo: ${motivo}<br><br>
+      Prováveis causas: aba anônima/privada, bloqueio de cookies e dados do site, ou espaço de armazenamento cheio.<br><br>
+      <b>O que fazer:</b> saia do modo anônimo, libere "cookies e dados do site" nas configurações do navegador, e recarregue esta página. Enquanto isso, tudo que você editar será perdido ao fechar.`;
+    document.body.insertBefore(aviso, document.body.firstChild);
+  }
+})();
+
+const tabsEl = document.getElementById("tabs");
+const mainEl = document.getElementById("main");
+
+SECOES.forEach((s,i)=>{
+  const btn = document.createElement("button");
+  btn.textContent = s.label;
+  btn.onclick = ()=>showSection(s.id);
+  btn.id = "tab-"+s.id;
+  tabsEl.appendChild(btn);
+
+  const sec = document.createElement("section");
+  sec.id = "sec-"+s.id;
+  sec.innerHTML = s.render();
+  mainEl.appendChild(sec);
+});
+
+function renderAll(){
+  SECOES.forEach(s=>{
+    document.getElementById("sec-"+s.id).innerHTML = s.render();
+  });
+}
+
+let activeTab = "resumo";
+function showSection(id){
+  activeTab = id;
+  document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll("main section").forEach(s=>s.classList.remove("active"));
+  document.getElementById("tab-"+id).classList.add("active");
+  document.getElementById("sec-"+id).classList.add("active");
+}
+showSection("resumo");
+
+mainEl.addEventListener("focusin", function(e){
+  if(!e.target.classList.contains("chapa-cell")) return;
+
+  const orig = e.target.dataset.orig;
+  if(orig === "fixo-chapa" || orig === "folg-chapa"){
+    const sec = document.getElementById("sec-original");
+    if(!sec) return;
+    const valor = e.target.textContent.trim();
+    sec.querySelectorAll('.chapa-cell[data-orig="fixo-chapa"], .chapa-cell[data-orig="folg-chapa"]').forEach(el=>{
+      el.classList.remove("chapa-highlight");
+    });
+    if(!valor) return;
+    sec.querySelectorAll('.chapa-cell[data-orig="fixo-chapa"], .chapa-cell[data-orig="folg-chapa"]').forEach(el=>{
+      if(el.textContent.trim() === valor){
+        el.classList.add("chapa-highlight");
+      }
+    });
+    return;
+  }
+
+  const g = e.target.dataset.escala;
+  if(g){
+    const banca = e.target.dataset.banca;
+    const valor = e.target.textContent.trim();
+    const sec = document.getElementById("sec-"+g);
+    if(sec){
+      sec.querySelectorAll('.chapa-cell[data-escala]').forEach(el=>{
+        el.classList.remove("chapa-highlight");
+      });
+      if(valor){
+        sec.querySelectorAll('.chapa-cell[data-escala]').forEach(el=>{
+          if(el.textContent.trim() === valor){
+            el.classList.add("chapa-highlight");
+          }
+        });
+      }
+    }
+    const fb = document.getElementById("copy-feedback-"+g);
+    if(!fb) return;
+    if(!valor){ fb.textContent = ""; return; }
+    const nomeAtual = NOME_POR_CHAPA[valor] || NOME_POR_CHAPA_ORIGINAL[valor];
+    const outras = localizarChapa(valor, banca);
+    fb.textContent = outras.length > 0
+      ? `ℹ️ ${nomeAtual || valor} também está em: ${outras.join(", ")}`
+      : `${nomeAtual || valor} só está aqui (${banca}).`;
+  }
+});
+
+mainEl.addEventListener("focusout", function(e){
+  if(!e.target.classList.contains("chapa-cell")) return;
+  const novoValor = e.target.textContent.trim();
+  if(e.target.dataset.escala){
+    saveBancaChapa(e.target.dataset.escala, e.target.dataset.banca, novoValor);
+  } else if(e.target.dataset.nome){
+    const nome = e.target.dataset.nome.replace(/&quot;/g,'"');
+    saveChapa(nome, novoValor);
+  } else if(e.target.dataset.orig){
+    tratarEdicaoOriginal(e.target.dataset.orig, e.target.dataset.banca, novoValor);
+    return;
+  } else if(e.target.dataset.bdCampo){
+    const idx = parseInt(e.target.dataset.bdIdx, 10);
+    if(BANCO_DADOS_LISTA[idx]){
+      if(e.target.dataset.bdCampo === "chapa") BANCO_DADOS_LISTA[idx].chapa = novoValor;
+      else BANCO_DADOS_LISTA[idx].banca = novoValor;
+      salvarBancoDados();
+    }
+    return;
+  } else {
+    return;
+  }
+  renderAll();
+  showSection(activeTab);
+});
+
+function localizarChapa(chapa, bancaAtual){
+  if(!chapa) return [];
+  const ocorrencias = [];
+  Object.keys(FIXO_DATA).forEach(b=>{
+    if(b !== bancaAtual && FIXO_DATA[b].chapa === chapa){
+      ocorrencias.push(`${b} (Fixo)`);
+    }
+  });
+  Object.keys(FOLGUISTA_DATA).forEach(b=>{
+    if(b !== bancaAtual && FOLGUISTA_DATA[b].chapa === chapa){
+      ocorrencias.push(`${b} (Folguista)`);
+    }
+  });
+  return ocorrencias;
+}
+
+function tratarEdicaoOriginal(tipo, banca, valor){
+  const fixoAntes = FIXO_DATA[banca] ? {...FIXO_DATA[banca]} : null;
+  const folguistaAntes = JSON.parse(JSON.stringify(FOLGUISTA_DATA));
+
+  // busca o nome ANTES de qualquer mutação, pra não se autorreferenciar com o nome antigo
+  // (com respaldo no mapa original, caso a chapa nao esteja mais no NOME_POR_CHAPA ao vivo)
+  const nomeRegistrado = valor ? (NOME_POR_CHAPA[valor] || NOME_POR_CHAPA_ORIGINAL[valor]) : undefined;
+
+  if(tipo === "fixo-chapa"){
+    if(!FIXO_DATA[banca]) FIXO_DATA[banca] = {chapa:"",nome:"",grupo:null};
+    FIXO_DATA[banca].chapa = valor;
+    if(valor === ""){
+      FIXO_DATA[banca].nome = "BANCA PARADA";
+      FIXO_DATA[banca].grupo = null;
+    } else if(nomeRegistrado){
+      FIXO_DATA[banca].nome = nomeRegistrado;
+      // sempre ajusta o grupo/cor pra bater com o grupo da pessoa nova
+      const grupoDaPessoa = grupoPessoalPorNome(nomeRegistrado, banca);
+      if(grupoDaPessoa) FIXO_DATA[banca].grupo = grupoDaPessoa;
+    }
+    // se essa chapa era de um folguista em outra banca, apaga a chapa/nome de la
+    if(valor){
+      Object.keys(FOLGUISTA_DATA).forEach(b=>{
+        if(FOLGUISTA_DATA[b].chapa === valor){
+          FOLGUISTA_DATA[b] = {chapa:"", nome:"SEM FOLGUISTA"};
+        }
+      });
+    }
+  } else if(tipo === "fixo-nome"){
+    if(!FIXO_DATA[banca]) FIXO_DATA[banca] = {chapa:"",nome:"",grupo:null};
+    FIXO_DATA[banca].nome = valor;
+  } else if(tipo === "folg-chapa"){
+    if(!FOLGUISTA_DATA[banca]) FOLGUISTA_DATA[banca] = {chapa:"",nome:""};
+    FOLGUISTA_DATA[banca].chapa = valor;
+    if(valor === ""){
+      FOLGUISTA_DATA[banca].nome = "SEM FOLGUISTA";
+    } else if(nomeRegistrado){
+      FOLGUISTA_DATA[banca].nome = nomeRegistrado;
+    }
+  } else if(tipo === "folg-nome"){
+    if(!FOLGUISTA_DATA[banca]) FOLGUISTA_DATA[banca] = {chapa:"",nome:""};
+    FOLGUISTA_DATA[banca].nome = valor;
+  }
+  NOME_POR_CHAPA = construirNomePorChapa();
+
+  HISTORICO.push({tipo:"original", banca, fixoAntes, folguistaAntes, label: banca + " (Dados Originais)"});
+  salvarHistorico();
+
+  document.getElementById("sec-original").innerHTML = dadosOriginaisHTML();
+
+  if((tipo === "fixo-chapa" || tipo === "folg-chapa") && valor){
+    const outras = localizarChapa(valor, banca);
+    const fb = document.getElementById("copy-feedback-original");
+    if(fb){
+      fb.textContent = outras.length > 0
+        ? `ℹ️ ${nomeRegistrado || valor} também está em: ${outras.join(", ")}`
+        : `✅ ${nomeRegistrado || valor} só está aqui (${banca}).`;
+      setTimeout(()=>{ fb.textContent = ""; }, 4000);
+    }
+  }
+}
+
+mainEl.addEventListener("change", function(e){
+  if(e.target.dataset && e.target.dataset.orig === "fixo-grupo"){
+    const banca = e.target.dataset.banca;
+    const fixoAntes = FIXO_DATA[banca] ? {...FIXO_DATA[banca]} : null;
+    const folguistaAntes = JSON.parse(JSON.stringify(FOLGUISTA_DATA));
+
+    if(!FIXO_DATA[banca]) FIXO_DATA[banca] = {chapa:"",nome:"",grupo:null};
+    FIXO_DATA[banca].grupo = e.target.value || null;
+    if(FIXO_DATA[banca].grupo === null && !FIXO_DATA[banca].nome){
+      FIXO_DATA[banca].nome = "BANCA PARADA";
+    }
+
+    HISTORICO.push({tipo:"original", banca, fixoAntes, folguistaAntes, label: banca + " - grupo (Dados Originais)"});
+    salvarHistorico();
+
+    document.getElementById("sec-original").innerHTML = dadosOriginaisHTML();
+  }
+});
+
+mainEl.addEventListener("keydown", function(e){
+  if(e.target.classList.contains("chapa-cell") && e.key === "Enter"){
+    e.preventDefault();
+    e.target.blur();
+  }
+});
+
+function desfazerUltimaEdicao(){
+  const btn = document.getElementById("btn-undo");
+  if(HISTORICO.length === 0){
+    if(btn){
+      const original = btn.textContent;
+      btn.textContent = "Nada para desfazer";
+      setTimeout(()=>{ btn.textContent = original; }, 1500);
+    }
+    return;
+  }
+
+  const ultima = HISTORICO.pop();
+  salvarHistorico();
+
+  if(ultima.tipo === "banca"){
+    if(ultima.anterior === undefined){
+      delete BANCA_OVERRIDES[ultima.chave];
+    } else {
+      BANCA_OVERRIDES[ultima.chave] = ultima.anterior;
+    }
+    try{ localStorage.setItem("bancaOverrides", JSON.stringify(BANCA_OVERRIDES)); }catch(e){}
+  } else if(ultima.tipo === "original"){
+    if(ultima.fixoAntes === null){
+      delete FIXO_DATA[ultima.banca];
+    } else {
+      FIXO_DATA[ultima.banca] = ultima.fixoAntes;
+    }
+    FOLGUISTA_DATA = ultima.folguistaAntes;
+    NOME_POR_CHAPA = construirNomePorChapa();
+  } else {
+    if(ultima.anterior === undefined){
+      delete CHAPA_OVERRIDES[ultima.chave];
+    } else {
+      CHAPA_OVERRIDES[ultima.chave] = ultima.anterior;
+    }
+    try{ localStorage.setItem("chapaOverrides", JSON.stringify(CHAPA_OVERRIDES)); }catch(e){}
+  }
+
+  renderAll();
+  showSection(activeTab);
+
+  if(btn){
+    const original = "↩️ Desfazer";
+    btn.textContent = "✅ Desfeito: " + ultima.label;
+    setTimeout(()=>{ btn.textContent = original; }, 1800);
+  }
+}
+
+const CHAVES_BACKUP = [
+  "fixoData","folguistaData","fixoDataBaseline","folguistaDataBaseline",
+  "bancoDadosLista","bancoDadosPadrao",
+  "chapaOverrides","bancaOverrides","ajudanteExtras","historicoChapas",
+  "folguistaGrupoProprio","grupoOriginalPorNome","listaFundidoresExtras"
+];
+
+function exportarBackup(){
+  const fb = document.getElementById("copy-feedback-resumo");
+  const dados = {};
+  let algumDado = false;
+  CHAVES_BACKUP.forEach(k=>{
+    const v = localStorage.getItem(k);
+    if(v !== null){ dados[k] = v; algumDado = true; }
+  });
+
+  if(!algumDado){
+    if(fb) fb.textContent = "⚠️ Não há nada salvo neste dispositivo ainda pra fazer backup.";
+    return;
+  }
+
+  try{
+    const conteudoJson = JSON.stringify(dados, null, 2);
+    const dataStr = new Date().toISOString().slice(0,10);
+    const nomeArquivo = `escalas_backup_${dataStr}.html`;
+    const conteudoHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Backup Escalas GAROL — ${dataStr}</title>
+<style>
+  body{font-family:Arial,sans-serif;background:#0f1115;color:#e8e8ea;padding:20px;}
+  h1{font-size:1.1rem;}
+  p{color:#9aa0aa;font-size:.85rem;}
+  pre{background:#171a21;border:1px solid #2a2f38;border-radius:8px;padding:14px;overflow-x:auto;font-size:.8rem;white-space:pre-wrap;word-break:break-word;}
+</style>
+</head>
+<body>
+<h1>💾 Backup — Escalas GAROL (${dataStr})</h1>
+<p>Este arquivo guarda uma cópia dos dados salvos no app (Dados Originais, Banco de Dados, chapas editadas). Pra usar, abra o app e toque em "Carregar backup", escolhendo este arquivo.</p>
+<pre id="backup-data">${conteudoJson.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</pre>
+</body>
+</html>`;
+
+    if(navigator.msSaveBlob){
+      const blob = new Blob([conteudoHtml], {type:"text/html"});
+      navigator.msSaveBlob(blob, nomeArquivo);
+    } else {
+      const blob = new Blob([conteudoHtml], {type:"text/html"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nomeArquivo;
+      a.rel = "noopener";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1500);
+    }
+
+    if(fb){
+      fb.textContent = `✅ Backup gerado: ${nomeArquivo} — confere a pasta Downloads do celular (ou a notificação do Chrome).`;
+    }
+  }catch(err){
+    if(fb) fb.textContent = "⚠️ Não consegui gerar o arquivo. Erro: " + (err && err.message ? err.message : err);
+  }
+}
+
+function importarBackup(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    let conteudo = e.target.result;
+
+    // se for um backup em .html, extrai o JSON de dentro da tag <pre id="backup-data">
+    const marcador = /<pre id="backup-data">([\s\S]*?)<\/pre>/;
+    const match = conteudo.match(marcador);
+    if(match){
+      conteudo = match[1]
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">");
+    }
+
+    let dados;
+    try{
+      dados = JSON.parse(conteudo);
+    }catch(err){
+      alert("Esse arquivo não é um backup válido.");
+      return;
+    }
+    if(!confirm("Isso vai substituir os dados salvos neste dispositivo pelos dados do backup. Continuar?")){
+      return;
+    }
+    let importados = 0;
+    Object.keys(dados).forEach(k=>{
+      if(CHAVES_BACKUP.includes(k)){
+        try{ localStorage.setItem(k, dados[k]); importados++; }catch(err){}
+      }
+    });
+    alert(`${importados} item(ns) importado(s)! A página vai recarregar agora.`);
+    location.reload();
+  };
+  reader.readAsText(file);
+  event.target.value = "";
+}
+
+function resetChapas(){
+  const btn = document.getElementById("btn-reset");
+  CHAPA_OVERRIDES = {};
+  BANCA_OVERRIDES = {};
+  AJ_EXTRAS = {F:[],H:[],B:[],D:[]};
+  HISTORICO = [];
+  try{
+    localStorage.removeItem("chapaOverrides");
+    localStorage.removeItem("bancaOverrides");
+    localStorage.removeItem("ajudanteExtras");
+    localStorage.removeItem("historicoChapas");
+  }catch(e){}
+
+  renderAll();
+  showSection(activeTab);
+
+  if(btn){
+    const original = "Restaurar tudo";
+    btn.textContent = "✅ Restaurado!";
+    btn.classList.add("confirm-pending");
+    setTimeout(()=>{
+      btn.textContent = original;
+      btn.classList.remove("confirm-pending");
+    }, 1800);
+  }
+}
+
+</script>
+</body>
+</html>
