@@ -107,7 +107,6 @@
 <div class="sub">Renda, Contas Fixas, Cartões e Comparativo — tudo num lugar só</div>
 
 <div class="backup-bar">
-  <button class="backup-btn" onclick="compartilharBackup()">📤 Compartilhar backup</button>
   <button class="backup-btn" onclick="exportarBackup()">⬇ Baixar backup</button>
   <label class="backup-btn" style="text-align:center;">
     ⬆ Importar
@@ -315,38 +314,72 @@ function localStorageDisponivel(){
   catch(e){ return false; }
 }
 
-function loadState(){
-  if(!localStorageDisponivel()){
-    document.getElementById('saveNote').textContent = "este navegador/app não permite salvar — abra no Chrome ou Safari";
-    document.getElementById('saveNote').style.color = "var(--amber)";
-  } else {
+function mergeEstadoPadrao(obj){
+  return Object.assign({ renda:{}, datas:{}, valoresPendentes:{}, pago:{}, custom:{}, parcelaOverride:{}, cartoes:{}, historico:null, customRendaAvulsa:[], documentos:[], cartoesCategorias:{} }, obj || {});
+}
+
+async function loadState(){
+  // 1) Carrega o que tiver salvo localmente, pra tela aparecer na hora
+  if(localStorageDisponivel()){
     try{
       const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw) state = Object.assign({ renda:{}, datas:{}, valoresPendentes:{}, pago:{}, custom:{}, parcelaOverride:{}, cartoes:{}, historico:null, customRendaAvulsa:[], documentos:[], cartoesCategorias:{} }, JSON.parse(raw));
+      if(raw) state = mergeEstadoPadrao(JSON.parse(raw));
     }catch(e){}
   }
   if(!state.historico) state.historico = JSON.parse(JSON.stringify(HISTORICO_INICIAL));
   renderAll();
+
+  // 2) Busca a versão mais recente no servidor (compartilhada entre navegadores)
+  await sincronizarDoServidor(true);
 }
+
+window.sincronizarDoServidor = async function(silencioso){
+  const note = document.getElementById('saveNote');
+  try{
+    const res = await fetch('/api/state', {cache:'no-store'});
+    if(res.ok){
+      const dados = await res.json();
+      if(dados && dados.state){
+        state = mergeEstadoPadrao(dados.state);
+        if(!state.historico) state.historico = JSON.parse(JSON.stringify(HISTORICO_INICIAL));
+        renderAll();
+        if(localStorageDisponivel()) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        if(!silencioso){ note.textContent = "sincronizado ✓"; note.style.color="var(--mint)"; setTimeout(()=>{note.textContent="as alterações salvam automaticamente"; note.style.color="";},1400); }
+      }
+    }
+  }catch(e){
+    if(!silencioso){ note.textContent = "sem conexão — mostrando última versão salva neste aparelho"; note.style.color="var(--amber)"; }
+  }
+};
 
 let saveTimeout;
 function saveState(){
   clearTimeout(saveTimeout);
   saveTimeout = setTimeout(attemptSave, 500);
 }
-function attemptSave(){
+async function attemptSave(){
   const note = document.getElementById('saveNote');
-  if(!localStorageDisponivel()){
-    note.textContent = "não foi possível salvar neste navegador"; note.style.color = "var(--amber)"; return;
+  if(localStorageDisponivel()){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
   }
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    note.textContent = "salvo ✓"; note.classList.add('saved'); note.style.color="";
+    const res = await fetch('/api/state', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({state})
+    });
+    if(!res.ok) throw new Error('falha ao salvar no servidor');
+    note.textContent = "salvo e sincronizado ✓"; note.classList.add('saved'); note.style.color="";
     setTimeout(()=>{ note.textContent="as alterações salvam automaticamente"; note.classList.remove('saved'); }, 1400);
   }catch(e){
-    note.textContent = "erro ao salvar — dados continuam na tela"; note.style.color = "var(--amber)";
+    note.textContent = "salvo neste aparelho, mas sem internet pra sincronizar"; note.style.color = "var(--amber)";
   }
 }
+
+// Re-sincroniza quando a aba volta a ficar visível (ex: trocou de app e voltou)
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible') sincronizarDoServidor(true);
+});
 
 // ============ TABS ============
 document.querySelectorAll('.tab').forEach(tab=>{
@@ -1205,92 +1238,7 @@ function renderDocumentos(){
           <button class="del-btn" onclick="onDocumentoDelete('${d.id}')">🗑</button>
         </div>
       </div>
-      <div class="add-row">
-        <button class="add-btn" id="btn-analisar-${d.id}" onclick="analisarDocumentoComIA('${d.id}')">🤖 Analisar cartão com IA</button>
-      </div>
-      <div id="resultado-${d.id}"></div>
     </div>`).join('');
-}
-
-async function analisarDocumentoComIA(docId){
-  const doc = (state.documentos || []).find(d=>d.id===docId);
-  if(!doc) return;
-  const btn = document.getElementById('btn-analisar-'+docId);
-  const resultDiv = document.getElementById('resultado-'+docId);
-  const tipoSuportado = doc.tipo === 'application/pdf' || doc.tipo.startsWith('image/');
-  if(!tipoSuportado){
-    resultDiv.innerHTML = `<div class="row"><div class="desc"><div class="meta pend">Só consigo analisar PDF ou imagem.</div></div></div>`;
-    return;
-  }
-  btn.disabled = true;
-  btn.textContent = "⏳ Analisando...";
-  resultDiv.innerHTML = '';
-
-  const base64Data = doc.base64.split(',')[1];
-  const contentBlock = doc.tipo === 'application/pdf'
-    ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64Data } }
-    : { type: "image", source: { type: "base64", media_type: doc.tipo, data: base64Data } };
-
-  const prompt = `Você vai analisar uma fatura de cartão de crédito (pode ter até 3 cartões diferentes no mesmo documento, cada um identificado por 4 dígitos, ex: 5447, 5581, 5201, e pelo nome do titular).
-
-Para CADA cartão que aparecer no documento, extraia:
-- numero: os 4 dígitos visíveis do cartão
-- titular: nome da pessoa
-- parcelamentos: soma total em R$ de todas as compras PARCELADAS (não à vista)
-- despesas: soma total em R$ de todas as despesas À VISTA (não parceladas)
-- categorias: um objeto com a soma das despesas à vista agrupada por tipo de estabelecimento (use categorias como "Supermercado", "Padaria", "Farmácia", "Lanchonete/Delivery", "Posto/Combustível", "Assinaturas", "Vestuário", "Outros", etc — as que fizerem sentido pros nomes das lojas que aparecerem)
-
-Responda SOMENTE com um JSON válido, sem nenhum texto antes ou depois, nesse formato exato:
-{"cartoes":[{"numero":"5447","titular":"Nome","parcelamentos":0.00,"despesas":0.00,"categorias":{"Categoria":0.00}}]}`;
-
-  try{
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1000,
-        messages: [{ role: "user", content: [contentBlock, { type: "text", text: prompt }] }]
-      })
-    });
-    const data = await response.json();
-    const textoResposta = (data.content || []).map(b=>b.text || '').join('\n');
-    const limpo = textoResposta.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(limpo);
-
-    if(!parsed.cartoes || !parsed.cartoes.length) throw new Error("Nenhum cartão identificado no documento.");
-
-    if(!state.cartoes) state.cartoes = {};
-    if(!state.cartoesCategorias) state.cartoesCategorias = {};
-
-    let resumoHTML = '';
-    parsed.cartoes.forEach(c=>{
-      const id = c.numero;
-      if(!state.cartoes[id]) state.cartoes[id] = {};
-      state.cartoes[id].parcelamentos = c.parcelamentos;
-      state.cartoes[id].despesas = c.despesas;
-      state.cartoesCategorias[id] = c.categorias || {};
-      const reconhecido = !!CARTOES_BASE[id];
-      resumoHTML += `<div class="row">
-        <div class="desc"><div class="name">Cartão ${id} ${reconhecido ? '(atualizado)' : '(não reconhecido — confira manualmente)'}</div>
-        <div class="meta">${c.titular || ''} · Parcelas ${fmtBRL(c.parcelamentos)} + Despesas ${fmtBRL(c.despesas)}</div></div>
-      </div>`;
-    });
-
-    resultDiv.innerHTML = `<div class="section" style="margin-top:8px; border-color:var(--mint);">
-      <div class="section-header">Extraído e aplicado ✓</div>
-      ${resumoHTML}
-    </div>`;
-
-    saveState();
-    renderAll();
-  }catch(err){
-    console.error(err);
-    resultDiv.innerHTML = `<div class="row"><div class="desc"><div class="meta pend">Não consegui analisar: ${err.message || 'erro desconhecido'}. Tenta de novo ou manda o valor manualmente.</div></div></div>`;
-  }finally{
-    btn.disabled = false;
-    btn.textContent = "🤖 Analisar cartão com IA";
-  }
 }
 
 window.onDocumentoUpload = function(event){
